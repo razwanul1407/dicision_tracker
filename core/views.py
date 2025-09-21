@@ -831,14 +831,54 @@ def invitation_respond_ajax(request, pk):
         if response == 'accepted':
             invitation.event.participants.add(request.user)
             message = 'Invitation accepted! You have been added to the event.'
+            
+            # Create notification for event organizer and project creator
+            organizer = invitation.event.organizer
+            project_creator = invitation.event.project.created_by if invitation.event.project else None
+            
+            # Notify event organizer
+            if organizer and organizer != request.user:
+                Notification.objects.create(
+                    user=organizer,
+                    title=f'Invitation Accepted',
+                    message=f'{request.user.get_full_name() or request.user.username} accepted the invitation to "{invitation.event.title}"',
+                    notification_type='invitation_response',
+                    event=invitation.event,
+                    invitation=invitation
+                )
+            
+            # Notify project creator (if different from organizer)
+            if project_creator and project_creator != request.user and project_creator != organizer:
+                Notification.objects.create(
+                    user=project_creator,
+                    title=f'Event Invitation Accepted',
+                    message=f'{request.user.get_full_name() or request.user.username} accepted the invitation to "{invitation.event.title}" in project "{invitation.event.project.name}"',
+                    notification_type='invitation_response',
+                    event=invitation.event,
+                    invitation=invitation
+                )
+                
         else:
             invitation.event.participants.remove(request.user)
             message = 'Invitation declined.'
+            
+            # Create notification for decline (optional - you can remove this if you don't want decline notifications)
+            organizer = invitation.event.organizer
+            if organizer and organizer != request.user:
+                Notification.objects.create(
+                    user=organizer,
+                    title=f'Invitation Declined',
+                    message=f'{request.user.get_full_name() or request.user.username} declined the invitation to "{invitation.event.title}"',
+                    notification_type='invitation_response',
+                    event=invitation.event,
+                    invitation=invitation
+                )
         
         return JsonResponse({
             'success': True,
             'message': message,
-            'status': invitation.get_status_display()
+            'status': invitation.get_status_display(),
+            'should_reload': True  # Signal to reload the page
         })
     except Exception as e:
         return JsonResponse({'success': False, 'error': str(e)}, status=500)

@@ -111,7 +111,8 @@
             <div class="invitation-item bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200"
                  data-status="{{ invitation.status }}"
                  data-event-date="{{ invitation.event.start_time|date:'Y-m-d' }}"
-                 data-created="{{ invitation.created_at|date:'Y-m-d' }}">
+                 data-created="{{ invitation.created_at|date:'Y-m-d' }}"
+                 data-invitation-id="{{ invitation.id }}">
                 <div class="p-6">
                     <div class="flex items-start justify-between">
                         <div class="flex-1">
@@ -121,7 +122,7 @@
                                         {{ invitation.event.title }}
                                     </a>
                                 </h3>
-                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                <span class="status-badge inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
                                     {% if invitation.status == 'accepted' %}
                                         bg-green-100 text-green-800
                                     {% elif invitation.status == 'declined' %}
@@ -205,18 +206,28 @@
                                     View Event
                                 </a>
                                 
-                                {% if invitation.status == 'pending' %}
-                                    <div class="flex space-x-2">
-                                        <button onclick="respondToInvitation({{ invitation.id }}, 'accepted')"
-                                                class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-md text-xs font-medium">
-                                            Accept
-                                        </button>
-                                        <button onclick="respondToInvitation({{ invitation.id }}, 'declined')"
-                                                class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md text-xs font-medium">
-                                            Decline
-                                        </button>
-                                    </div>
-                                {% endif %}
+                                <div class="invitation-actions">
+                                    {% if invitation.status == 'pending' %}
+                                        <div class="flex space-x-2">
+                                            <button onclick="respondToInvitation({{ invitation.id }}, 'accepted')"
+                                                    class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-md text-xs font-medium transition-all duration-200">
+                                                Accept
+                                            </button>
+                                            <button onclick="respondToInvitation({{ invitation.id }}, 'declined')"
+                                                    class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md text-xs font-medium transition-all duration-200">
+                                                Decline
+                                            </button>
+                                        </div>
+                                    {% else %}
+                                        <span class="text-sm text-gray-500">
+                                            {% if invitation.status == 'accepted' %}
+                                                You accepted this invitation
+                                            {% else %}
+                                                You declined this invitation
+                                            {% endif %}
+                                        </span>
+                                    {% endif %}
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -314,7 +325,14 @@ function respondToInvitation(invitationId, response) {
         return;
     }
     
-    fetch(`/core/invitations/${invitationId}/respond/`, {
+    // Show loading state
+    const buttons = document.querySelectorAll(`[onclick*="${invitationId}"]`);
+    buttons.forEach(btn => {
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>Processing...';
+    });
+    
+    fetch(`/core/invitations/${invitationId}/respond-ajax/`, {
         method: 'POST',
         headers: {
             'Content-Type': 'application/x-www-form-urlencoded',
@@ -325,28 +343,93 @@ function respondToInvitation(invitationId, response) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            // Show success message
-            const message = document.createElement('div');
-            message.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-md z-50';
-            message.textContent = `Invitation ${response} successfully!`;
-            document.body.appendChild(message);
+            // Show success message with better styling
+            showNotification(data.message, 'success');
             
-            setTimeout(() => {
-                message.remove();
-            }, 3000);
+            // Update the invitation card immediately
+            const invitationCard = document.querySelector(`[data-invitation-id="${invitationId}"]`);
+            if (invitationCard) {
+                // Update status badge
+                const statusBadge = invitationCard.querySelector('.status-badge');
+                if (statusBadge) {
+                    statusBadge.className = `status-badge px-2 py-1 rounded-full text-xs font-medium ${
+                        response === 'accepted' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                    }`;
+                    statusBadge.textContent = response.charAt(0).toUpperCase() + response.slice(1);
+                }
+                
+                // Remove action buttons
+                const actionButtons = invitationCard.querySelector('.invitation-actions');
+                if (actionButtons) {
+                    actionButtons.innerHTML = `
+                        <span class="text-sm text-gray-500">
+                            ${response === 'accepted' ? 'You accepted this invitation' : 'You declined this invitation'}
+                        </span>
+                    `;
+                }
+                
+                // Update dataset for filtering
+                invitationCard.dataset.status = response;
+            }
             
-            // Reload page to reflect changes
-            setTimeout(() => {
-                location.reload();
-            }, 1000);
+            // Update statistics
+            updateStatistics();
+            
+            // Reload page after a short delay to ensure all changes are reflected
+            if (data.should_reload) {
+                setTimeout(() => {
+                    location.reload();
+                }, 2000);
+            }
         } else {
-            alert('Error responding to invitation: ' + data.error);
+            showNotification('Error responding to invitation: ' + data.error, 'error');
+            // Re-enable buttons on error
+            buttons.forEach(btn => {
+                btn.disabled = false;
+                btn.innerHTML = response === 'accepted' ? 'Accept' : 'Decline';
+            });
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('Error responding to invitation');
+        showNotification('Error responding to invitation. Please try again.', 'error');
+        // Re-enable buttons on error
+        buttons.forEach(btn => {
+            btn.disabled = false;
+            btn.innerHTML = response === 'accepted' ? 'Accept' : 'Decline';
+        });
     });
+}
+
+// Enhanced notification function
+function showNotification(message, type = 'success') {
+    // Remove any existing notifications
+    const existingNotifications = document.querySelectorAll('.notification-toast');
+    existingNotifications.forEach(notification => notification.remove());
+    
+    const notification = document.createElement('div');
+    notification.className = `notification-toast fixed top-4 right-4 px-6 py-4 rounded-lg shadow-lg z-50 max-w-sm ${
+        type === 'success' ? 'bg-green-500 text-white' : 'bg-red-500 text-white'
+    }`;
+    
+    notification.innerHTML = `
+        <div class="flex items-center">
+            <i class="fas ${type === 'success' ? 'fa-check-circle' : 'fa-exclamation-circle'} mr-3"></i>
+            <span class="text-sm font-medium">${message}</span>
+            <button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-white hover:text-gray-200">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    `;
+    
+    document.body.appendChild(notification);
+    
+    // Auto remove after 5 seconds
+    setTimeout(() => {
+        if (notification.parentElement) {
+            notification.remove();
+        }
+    }, 5000);
 }
 
 // Initialize on page load

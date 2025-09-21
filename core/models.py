@@ -214,6 +214,7 @@ class Notification(models.Model):
     
     TYPE_CHOICES = [
         ('event_invitation', 'Event Invitation'),
+        ('invitation_response', 'Invitation Response'),
         ('event_update', 'Event Update'),
         ('decision_created', 'Decision Created'),
         ('deliverable_assigned', 'Deliverable Assigned'),
