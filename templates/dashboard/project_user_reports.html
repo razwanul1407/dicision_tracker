@@ -1,0 +1,311 @@
+{% extends "base.html" %}
+
+{% block page_title %}My Reports{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Page Header -->
+    <div class="flex justify-between items-center">
+        <h1 class="text-3xl font-bold text-gray-900">My Reports</h1>
+        <div class="text-sm text-gray-500">
+            <i class="fas fa-chart-bar mr-2"></i>
+            Your activity and participation summary
+        </div>
+    </div>
+
+    <!-- Personal Overview -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <!-- My Projects -->
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-folder text-green-600 text-2xl"></i>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">My Projects</dt>
+                            <dd class="text-lg font-medium text-gray-900">{{ total_projects }}</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- My Events -->
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-calendar text-blue-600 text-2xl"></i>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">My Events</dt>
+                            <dd class="text-lg font-medium text-gray-900">{{ total_events }}</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- My Decisions -->
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-lightbulb text-purple-600 text-2xl"></i>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">Involved Decisions</dt>
+                            <dd class="text-lg font-medium text-gray-900">{{ total_decisions }}</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- My Deliverables -->
+        <div class="bg-white overflow-hidden shadow rounded-lg">
+            <div class="p-5">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-tasks text-orange-600 text-2xl"></i>
+                    </div>
+                    <div class="ml-5 w-0 flex-1">
+                        <dl>
+                            <dt class="text-sm font-medium text-gray-500 truncate">My Deliverables</dt>
+                            <dd class="text-lg font-medium text-gray-900">{{ total_deliverables }}</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- My Activity -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Recent Activity -->
+        <div class="bg-white shadow rounded-lg">
+            <div class="px-4 py-5 sm:p-6">
+                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
+                    <i class="fas fa-clock text-blue-600 mr-2"></i>
+                    My Activity This Week
+                </h3>
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-600">Events Participated</span>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            {{ recent_events }}
+                        </span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-600">Decisions Involved</span>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                            {{ recent_decisions }}
+                        </span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-600">Deliverables Updated</span>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                            {{ recent_deliverables }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Monthly Summary -->
+        <div class="bg-white shadow rounded-lg">
+            <div class="px-4 py-5 sm:p-6">
+                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
+                    <i class="fas fa-chart-line text-green-600 mr-2"></i>
+                    This Month's Summary
+                </h3>
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-600">Monthly Events</span>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                            {{ monthly_events }}
+                        </span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-600">Monthly Decisions</span>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                            {{ monthly_decisions }}
+                        </span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm text-gray-600">Monthly Deliverables</span>
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-100 text-orange-800">
+                            {{ monthly_deliverables }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- My Status Overview -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- My Deliverable Status -->
+        <div class="bg-white shadow rounded-lg">
+            <div class="px-4 py-5 sm:p-6">
+                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
+                    <i class="fas fa-pie-chart text-orange-600 mr-2"></i>
+                    My Deliverable Status
+                </h3>
+                <div class="space-y-3">
+                    {% for status_info in deliverable_status_counts %}
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-gray-600 capitalize">{{ status_info.status|default:"Not Set" }}</span>
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                                {% if status_info.status == 'completed' %}bg-green-100 text-green-800
+                                {% elif status_info.status == 'in_progress' %}bg-blue-100 text-blue-800
+                                {% elif status_info.status == 'pending' %}bg-yellow-100 text-yellow-800
+                                {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                {{ status_info.count }}
+                            </span>
+                        </div>
+                    {% empty %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-tasks text-gray-400 text-3xl mb-2"></i>
+                            <p class="text-sm text-gray-500">No deliverables yet</p>
+                            <p class="text-xs text-gray-400">You'll see your deliverable status here once you have some assigned</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- My Decision Involvement -->
+        <div class="bg-white shadow rounded-lg">
+            <div class="px-4 py-5 sm:p-6">
+                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
+                    <i class="fas fa-pie-chart text-purple-600 mr-2"></i>
+                    My Decisions by Event
+                </h3>
+                <div class="space-y-3">
+                    {% for event_info in decision_by_event_counts %}
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm text-gray-600">{{ event_info.event__title|truncatechars:20 }}</span>
+                            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                {{ event_info.count }}
+                            </span>
+                        </div>
+                    {% empty %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-lightbulb text-gray-400 text-3xl mb-2"></i>
+                            <p class="text-sm text-gray-500">No decisions yet</p>
+                            <p class="text-xs text-gray-400">You'll see decision involvement here once you participate in meetings</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- My Recent Activity -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Recent Events I'm Involved In -->
+        <div class="bg-white shadow rounded-lg">
+            <div class="px-4 py-5 sm:p-6">
+                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
+                    <i class="fas fa-calendar text-blue-600 mr-2"></i>
+                    Recent Events
+                </h3>
+                <div class="space-y-3">
+                    {% for event in latest_events %}
+                        <div class="border-l-4 border-blue-400 pl-3">
+                            <div class="text-sm font-medium text-gray-900">
+                                <a href="{% url 'core:event_detail' event.pk %}" class="hover:text-blue-600">
+                                    {{ event.title }}
+                                </a>
+                            </div>
+                            <div class="text-xs text-gray-500">
+                                {{ event.start_time|date:"M d, Y" }} - {{ event.project.name }}
+                                {% if event.organizer == request.user %}
+                                    <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 ml-1">
+                                        Organizer
+                                    </span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% empty %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-calendar text-gray-400 text-2xl mb-2"></i>
+                            <p class="text-sm text-gray-500">No recent events</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Decisions I'm Involved In -->
+        <div class="bg-white shadow rounded-lg">
+            <div class="px-4 py-5 sm:p-6">
+                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
+                    <i class="fas fa-lightbulb text-purple-600 mr-2"></i>
+                    Recent Decisions
+                </h3>
+                <div class="space-y-3">
+                    {% for decision in latest_decisions %}
+                        <div class="border-l-4 border-purple-400 pl-3">
+                            <div class="text-sm font-medium text-gray-900">
+                                <a href="{% url 'core:decision_detail' decision.pk %}" class="hover:text-purple-600">
+                                    {{ decision.title|truncatechars:30 }}
+                                </a>
+                            </div>
+                            <div class="text-xs text-gray-500">
+                                {{ decision.created_at|date:"M d, Y" }} - {{ decision.event.title }}
+                            </div>
+                        </div>
+                    {% empty %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-lightbulb text-gray-400 text-2xl mb-2"></i>
+                            <p class="text-sm text-gray-500">No recent decisions</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <!-- My Recent Deliverables -->
+        <div class="bg-white shadow rounded-lg">
+            <div class="px-4 py-5 sm:p-6">
+                <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">
+                    <i class="fas fa-tasks text-orange-600 mr-2"></i>
+                    Recent Deliverables
+                </h3>
+                <div class="space-y-3">
+                    {% for deliverable in latest_deliverables %}
+                        <div class="border-l-4 border-orange-400 pl-3">
+                            <div class="text-sm font-medium text-gray-900">
+                                <a href="{% url 'core:deliverable_detail' deliverable.pk %}" class="hover:text-orange-600">
+                                    {{ deliverable.title|truncatechars:30 }}
+                                </a>
+                            </div>
+                            <div class="text-xs text-gray-500">
+                                {{ deliverable.created_at|date:"M d, Y" }}{% if deliverable.decision and deliverable.decision.event.project %} - {{ deliverable.decision.event.project.name }}{% endif %}
+                                <span class="inline-flex items-center px-1.5 py-0.5 rounded-full text-xs font-medium 
+                                    {% if deliverable.status == 'completed' %}bg-green-100 text-green-800
+                                    {% elif deliverable.status == 'in_progress' %}bg-blue-100 text-blue-800
+                                    {% elif deliverable.status == 'pending' %}bg-yellow-100 text-yellow-800
+                                    {% else %}bg-gray-100 text-gray-800{% endif %} ml-1">
+                                    {{ deliverable.status|default:"No Status"|capfirst }}
+                                </span>
+                            </div>
+                        </div>
+                    {% empty %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-tasks text-gray-400 text-2xl mb-2"></i>
+                            <p class="text-sm text-gray-500">No recent deliverables</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

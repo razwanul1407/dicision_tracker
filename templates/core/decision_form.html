@@ -1,0 +1,286 @@
+{% extends "base.html" %}
+
+{% block page_title %}{% if form.instance.pk %}Edit Decision{% else %}New Decision{% endif %}{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="bg-white shadow rounded-lg">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-xl font-semibold text-gray-900">
+                {% if form.instance.pk %}Edit Decision{% else %}Record New Decision{% endif %}
+            </h2>
+        </div>
+        
+        <form method="post" class="space-y-6 p-6">
+            {% csrf_token %}
+            
+            {% if form.non_field_errors %}
+                <div class="bg-red-50 border border-red-200 rounded-md p-4">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-exclamation-circle text-red-400"></i>
+                        </div>
+                        <div class="ml-3">
+                            <h3 class="text-sm font-medium text-red-800">
+                                Please correct the following errors:
+                            </h3>
+                            <div class="mt-2 text-sm text-red-700">
+                                {{ form.non_field_errors }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Title -->
+                <div class="md:col-span-2">
+                    <label for="{{ form.title.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                        Decision Title *
+                    </label>
+                    <div class="mt-1">
+                        {{ form.title }}
+                        {% if form.title.errors %}
+                            <p class="mt-2 text-sm text-red-600">{{ form.title.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Event -->
+                <div>
+                    <label for="{{ form.event.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                        Related Event *
+                    </label>
+                    <div class="mt-1">
+                        {{ form.event }}
+                        {% if form.event.errors %}
+                            <p class="mt-2 text-sm text-red-600">{{ form.event.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Next Review Date -->
+                <div>
+                    <label for="{{ form.next_review_date.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                        Next Review Date
+                    </label>
+                    <div class="mt-1">
+                        {{ form.next_review_date }}
+                        {% if form.next_review_date.errors %}
+                            <p class="mt-2 text-sm text-red-600">{{ form.next_review_date.errors.0 }}</p>
+                        {% endif %}
+                        <p class="mt-1 text-sm text-gray-500">
+                            Optional: Set a date to review this decision's progress.
+                        </p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Description -->
+            <div>
+                <label for="{{ form.description.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                    Decision Description *
+                </label>
+                <div class="mt-1">
+                    {{ form.description }}
+                    {% if form.description.errors %}
+                        <p class="mt-2 text-sm text-red-600">{{ form.description.errors.0 }}</p>
+                    {% endif %}
+                    <p class="mt-2 text-sm text-gray-500">
+                        Provide a detailed description of the decision, including context, rationale, and expected outcomes.
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Action Items -->
+            <div>
+                <label for="{{ form.action_items.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                    Action Items
+                </label>
+                <div class="mt-1">
+                    {{ form.action_items }}
+                    {% if form.action_items.errors %}
+                        <p class="mt-2 text-sm text-red-600">{{ form.action_items.errors.0 }}</p>
+                    {% endif %}
+                    <p class="mt-2 text-sm text-gray-500">
+                        List specific actions that need to be taken as a result of this decision. Use bullet points or numbered lists.
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Notes -->
+            <div>
+                <label for="{{ form.notes.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                    Additional Notes
+                </label>
+                <div class="mt-1">
+                    {{ form.notes }}
+                    {% if form.notes.errors %}
+                        <p class="mt-2 text-sm text-red-600">{{ form.notes.errors.0 }}</p>
+                    {% endif %}
+                    <p class="mt-2 text-sm text-gray-500">
+                        Any additional context, concerns, or follow-up information related to this decision.
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="flex justify-end space-x-3 pt-6 border-t border-gray-200">
+                <a href="{% if form.instance.pk %}{% url 'core:decision_detail' form.instance.pk %}{% else %}{% url 'core:decision_list' %}{% endif %}" 
+                   class="btn-outline">
+                    Cancel
+                </a>
+                <button type="submit" class="btn-primary">
+                    <i class="fas fa-save mr-2"></i>
+                    {% if form.instance.pk %}Update Decision{% else %}Record Decision{% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Related Deliverables -->
+    {% if form.instance.pk %}
+        <div class="bg-white shadow rounded-lg mt-6">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-medium text-gray-900">Related Deliverables</h3>
+                    <a href="{% url 'core:deliverable_create' %}?decision={{ form.instance.pk }}" class="btn-primary text-sm">
+                        <i class="fas fa-plus mr-1"></i>Add Deliverable
+                    </a>
+                </div>
+            </div>
+            <div class="divide-y divide-gray-200">
+                {% for deliverable in form.instance.deliverables.all %}
+                    <div class="px-6 py-4">
+                        <div class="flex items-center justify-between">
+                            <div class="flex-1 min-w-0">
+                                <h4 class="text-sm font-medium text-gray-900">
+                                    <a href="{% url 'core:deliverable_detail' deliverable.pk %}" class="hover:text-indigo-600">
+                                        {{ deliverable.title }}
+                                    </a>
+                                </h4>
+                                <p class="text-sm text-gray-500">{{ deliverable.description|truncatewords:15 }}</p>
+                                <div class="mt-1 flex items-center text-xs text-gray-400">
+                                    <span>Due: {{ deliverable.due_date|date:"M d, Y" }}</span>
+                                    {% if deliverable.assigned_to %}
+                                        <span class="mx-2">•</span>
+                                        <span>Assigned to {{ deliverable.assigned_to.get_full_name }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-2">
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                             {% if deliverable.status == 'completed' %}bg-green-100 text-green-800
+                                             {% elif deliverable.status == 'in_progress' %}bg-yellow-100 text-yellow-800
+                                             {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                    {{ deliverable.get_status_display }}
+                                </span>
+                                {% if user.is_admin or user.is_management or deliverable.assigned_to == user %}
+                                    <a href="{% url 'core:deliverable_update' deliverable.pk %}" 
+                                       class="text-indigo-600 hover:text-indigo-900">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="px-6 py-8 text-center text-gray-500">
+                        <i class="fas fa-tasks text-gray-300 text-3xl mb-2"></i>
+                        <p>No deliverables assigned yet</p>
+                        <a href="{% url 'core:deliverable_create' %}?decision={{ form.instance.pk }}" class="text-indigo-600 hover:text-indigo-800 text-sm">
+                            Create the first deliverable
+                        </a>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-set next review date suggestions
+    const nextReviewInput = document.getElementById('{{ form.next_review_date.id_for_label }}');
+    
+    if (nextReviewInput && !nextReviewInput.value) {
+        // Suggest review date 30 days from now
+        const suggestedDate = new Date();
+        suggestedDate.setDate(suggestedDate.getDate() + 30);
+        
+        // Format for date input
+        const year = suggestedDate.getFullYear();
+        const month = String(suggestedDate.getMonth() + 1).padStart(2, '0');
+        const day = String(suggestedDate.getDate()).padStart(2, '0');
+        
+        // Add helper text
+        const helpText = document.createElement('p');
+        helpText.className = 'mt-1 text-sm text-indigo-600';
+        helpText.innerHTML = `<i class="fas fa-lightbulb mr-1"></i>Suggestion: ${suggestedDate.toLocaleDateString()}`;
+        helpText.style.cursor = 'pointer';
+        
+        helpText.addEventListener('click', function() {
+            nextReviewInput.value = `${year}-${month}-${day}`;
+            this.remove();
+        });
+        
+        nextReviewInput.parentNode.appendChild(helpText);
+    }
+    
+    // Character count for description
+    const descriptionField = document.getElementById('{{ form.description.id_for_label }}');
+    if (descriptionField) {
+        const counter = document.createElement('div');
+        counter.className = 'text-right text-sm text-gray-500 mt-1';
+        
+        function updateCounter() {
+            const count = descriptionField.value.length;
+            counter.textContent = `${count} characters`;
+            
+            if (count < 50) {
+                counter.className = 'text-right text-sm text-red-500 mt-1';
+                counter.textContent += ' (Consider adding more detail)';
+            } else {
+                counter.className = 'text-right text-sm text-gray-500 mt-1';
+            }
+        }
+        
+        descriptionField.addEventListener('input', updateCounter);
+        descriptionField.parentNode.appendChild(counter);
+        updateCounter();
+    }
+    
+    // Smart formatting for action items
+    const actionItemsField = document.getElementById('{{ form.action_items.id_for_label }}');
+    if (actionItemsField) {
+        actionItemsField.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                const value = this.value;
+                const cursorPos = this.selectionStart;
+                const lines = value.split('\n');
+                const currentLineIndex = value.substring(0, cursorPos).split('\n').length - 1;
+                const currentLine = lines[currentLineIndex];
+                
+                // Auto-add bullet point or number
+                let newLine = '\n';
+                if (currentLine.match(/^\s*[-*•]\s/)) {
+                    newLine += '- ';
+                } else if (currentLine.match(/^\s*\d+\.\s/)) {
+                    const num = parseInt(currentLine.match(/^\s*(\d+)\./)[1]) + 1;
+                    newLine += `${num}. `;
+                } else {
+                    newLine += '- ';
+                }
+                
+                const newValue = value.substring(0, cursorPos) + newLine + value.substring(cursorPos);
+                this.value = newValue;
+                this.selectionStart = this.selectionEnd = cursorPos + newLine.length;
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

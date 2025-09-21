@@ -1,0 +1,397 @@
+{% extends "admin_base.html" %}
+
+{% block page_title %}User Management{% endblock %}
+
+{% block header_actions %}
+    <a href="{% url 'accounts:register' %}" class="btn-primary">
+        <i class="fas fa-user-plus mr-2"></i>Add User
+    </a>
+{% endblock %}
+
+{% block content %}
+<!-- Filter Bar -->
+<div class="bg-white shadow rounded-lg mb-6">
+    <div class="px-6 py-4">
+        <form method="get" class="flex flex-wrap items-center gap-4">
+            <div class="flex-1 min-w-64">
+                <input type="text" name="search" value="{{ request.GET.search }}" 
+                       placeholder="Search users..." 
+                       class="form-input w-full">
+            </div>
+            
+            <div class="min-w-32">
+                <select name="role" class="form-select w-full">
+                    <option value="">All Roles</option>
+                    <option value="admin" {% if request.GET.role == "admin" %}selected{% endif %}>Admin</option>
+                    <option value="management" {% if request.GET.role == "management" %}selected{% endif %}>Management</option>
+                    <option value="project_user" {% if request.GET.role == "project_user" %}selected{% endif %}>Project User</option>
+                </select>
+            </div>
+            
+            <div class="min-w-32">
+                <select name="is_active" class="form-select w-full">
+                    <option value="">All Status</option>
+                    <option value="true" {% if request.GET.is_active == "true" %}selected{% endif %}>Active</option>
+                    <option value="false" {% if request.GET.is_active == "false" %}selected{% endif %}>Inactive</option>
+                </select>
+            </div>
+            
+            <button type="submit" class="btn-secondary">
+                <i class="fas fa-search mr-2"></i>Filter
+            </button>
+            
+            {% if request.GET %}
+                <a href="{% url 'accounts:user_list' %}" class="btn-outline">
+                    <i class="fas fa-times mr-2"></i>Clear
+                </a>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="p-5">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-users text-blue-600 text-2xl"></i>
+                </div>
+                <div class="ml-5 w-0 flex-1">
+                    <dl>
+                        <dt class="text-sm font-medium text-gray-500 truncate">Total Users</dt>
+                        <dd class="text-lg font-medium text-gray-900">{{ users.count }}</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="p-5">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-user-shield text-purple-600 text-2xl"></i>
+                </div>
+                <div class="ml-5 w-0 flex-1">
+                    <dl>
+                        <dt class="text-sm font-medium text-gray-500 truncate">Admins</dt>
+                        <dd class="text-lg font-medium text-gray-900">{{ admin_count }}</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="p-5">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-user-tie text-green-600 text-2xl"></i>
+                </div>
+                <div class="ml-5 w-0 flex-1">
+                    <dl>
+                        <dt class="text-sm font-medium text-gray-500 truncate">Management</dt>
+                        <dd class="text-lg font-medium text-gray-900">{{ management_count }}</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="p-5">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-user text-yellow-600 text-2xl"></i>
+                </div>
+                <div class="ml-5 w-0 flex-1">
+                    <dl>
+                        <dt class="text-sm font-medium text-gray-500 truncate">Project Users</dt>
+                        <dd class="text-lg font-medium text-gray-900">{{ project_user_count }}</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Users Table -->
+<div class="bg-white shadow overflow-hidden sm:rounded-md">
+    <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    User
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Role
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Last Login
+                </th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Activity
+                </th>
+                <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Actions
+                </th>
+            </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+            {% for user_item in users %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center">
+                            <div class="flex-shrink-0 h-10 w-10">
+                                <div class="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
+                                    <span class="text-sm font-medium text-gray-700">
+                                        {{ user_item.first_name.0 }}{{ user_item.last_name.0 }}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="ml-4">
+                                <div class="text-sm font-medium text-gray-900">
+                                    {{ user_item.get_full_name }}
+                                </div>
+                                <div class="text-sm text-gray-500">
+                                    {{ user_item.email }}
+                                </div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                     {% if user_item.role == 'admin' %}bg-purple-100 text-purple-800
+                                     {% elif user_item.role == 'management' %}bg-green-100 text-green-800
+                                     {% else %}bg-blue-100 text-blue-800{% endif %}">
+                            <i class="fas fa-{% if user_item.role == 'admin' %}user-shield{% elif user_item.role == 'management' %}user-tie{% else %}user{% endif %} mr-1"></i>
+                            {{ user_item.get_role_display }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                     {% if user_item.is_active %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
+                            <i class="fas fa-{% if user_item.is_active %}check-circle{% else %}times-circle{% endif %} mr-1"></i>
+                            {% if user_item.is_active %}Active{% else %}Inactive{% endif %}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {% if user_item.last_login %}
+                            {{ user_item.last_login|date:"M d, Y H:i" }}
+                        {% else %}
+                            <span class="text-gray-400">Never</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <div class="flex flex-col space-y-1">
+                            {% with events_count=user_item.event_participations.count %}
+                                {% if events_count > 0 %}
+                                    <span class="text-xs">{{ events_count }} event{{ events_count|pluralize }}</span>
+                                {% endif %}
+                            {% endwith %}
+                            {% with decisions_count=user_item.decisions.count %}
+                                {% if decisions_count > 0 %}
+                                    <span class="text-xs">{{ decisions_count }} decision{{ decisions_count|pluralize }}</span>
+                                {% endif %}
+                            {% endwith %}
+                            {% with deliverables_count=user_item.assigned_deliverables.count %}
+                                {% if deliverables_count > 0 %}
+                                    <span class="text-xs">{{ deliverables_count }} deliverable{{ deliverables_count|pluralize }}</span>
+                                {% endif %}
+                            {% endwith %}
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <div class="flex items-center justify-end space-x-2">
+                            <a href="{% url 'accounts:user_edit' user_item.pk %}" 
+                               class="text-indigo-600 hover:text-indigo-900">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            {% if user_item != user %}
+                                <button onclick="toggleUserStatus({{ user_item.pk }}, {{ user_item.is_active|yesno:'false,true' }})" 
+                                        class="{% if user_item.is_active %}text-red-600 hover:text-red-900{% else %}text-green-600 hover:text-green-900{% endif %}">
+                                    <i class="fas fa-{% if user_item.is_active %}user-slash{% else %}user-check{% endif %}"></i>
+                                </button>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="6" class="px-6 py-12 text-center">
+                        <div class="text-gray-400">
+                            <i class="fas fa-users text-4xl mb-4"></i>
+                            <h3 class="text-lg font-medium text-gray-900 mb-2">No users found</h3>
+                            <p class="text-gray-500">
+                                {% if request.GET %}
+                                    Try adjusting your search criteria.
+                                {% else %}
+                                    Start by adding your first user.
+                                {% endif %}
+                            </p>
+                            <div class="mt-4">
+                                <a href="{% url 'accounts:register' %}" class="btn-primary">
+                                    <i class="fas fa-user-plus mr-2"></i>Add User
+                                </a>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- Pagination -->
+{% if is_paginated %}
+    <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 mt-6">
+        <div class="flex-1 flex justify-between sm:hidden">
+            {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}{% if request.GET %}&{{ request.GET.urlencode }}{% endif %}" 
+                   class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                    Previous
+                </a>
+            {% endif %}
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}{% if request.GET %}&{{ request.GET.urlencode }}{% endif %}" 
+                   class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                    Next
+                </a>
+            {% endif %}
+        </div>
+        <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+            <div>
+                <p class="text-sm text-gray-700">
+                    Showing <span class="font-medium">{{ page_obj.start_index }}</span> to <span class="font-medium">{{ page_obj.end_index }}</span> of 
+                    <span class="font-medium">{{ page_obj.paginator.count }}</span> results
+                </p>
+            </div>
+            <div>
+                <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                    {% if page_obj.has_previous %}
+                        <a href="?page={{ page_obj.previous_page_number }}{% if request.GET %}&{{ request.GET.urlencode }}{% endif %}" 
+                           class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                    {% endif %}
+                    
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                            <span class="z-10 bg-indigo-50 border-indigo-500 text-indigo-600 relative inline-flex items-center px-4 py-2 border text-sm font-medium">
+                                {{ num }}
+                            </span>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <a href="?page={{ num }}{% if request.GET %}&{{ request.GET.urlencode }}{% endif %}" 
+                               class="bg-white border-gray-300 text-gray-500 hover:bg-gray-50 relative inline-flex items-center px-4 py-2 border text-sm font-medium">
+                                {{ num }}
+                            </a>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if page_obj.has_next %}
+                        <a href="?page={{ page_obj.next_page_number }}{% if request.GET %}&{{ request.GET.urlencode }}{% endif %}" 
+                           class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    {% endif %}
+                </nav>
+            </div>
+        </div>
+    </div>
+{% endif %}
+
+<!-- Status Toggle Modal -->
+<div id="statusModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden">
+    <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div class="mt-3 text-center">
+            <div class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100 mb-4">
+                <i class="fas fa-exclamation-triangle text-yellow-600"></i>
+            </div>
+            <h3 class="text-lg font-medium text-gray-900" id="modalTitle">Toggle User Status</h3>
+            <div class="mt-2 px-7 py-3">
+                <p class="text-sm text-gray-500" id="modalMessage">
+                    Are you sure you want to change this user's status?
+                </p>
+            </div>
+            <div class="items-center px-4 py-3">
+                <button id="confirmStatusToggle" class="px-4 py-2 bg-yellow-500 text-white text-base font-medium rounded-md w-24 mr-2 hover:bg-yellow-600">
+                    Confirm
+                </button>
+                <button id="cancelStatusToggle" class="px-4 py-2 bg-gray-300 text-gray-800 text-base font-medium rounded-md w-24 hover:bg-gray-400">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let userToToggle = null;
+let newStatus = null;
+
+function toggleUserStatus(userId, activate) {
+    userToToggle = userId;
+    newStatus = activate;
+    
+    const modalTitle = document.getElementById('modalTitle');
+    const modalMessage = document.getElementById('modalMessage');
+    
+    if (activate) {
+        modalTitle.textContent = 'Activate User';
+        modalMessage.textContent = 'Are you sure you want to activate this user? They will be able to log in and access the system.';
+    } else {
+        modalTitle.textContent = 'Deactivate User';
+        modalMessage.textContent = 'Are you sure you want to deactivate this user? They will be logged out and unable to access the system.';
+    }
+    
+    document.getElementById('statusModal').classList.remove('hidden');
+}
+
+document.getElementById('confirmStatusToggle').addEventListener('click', function() {
+    if (userToToggle && newStatus !== null) {
+        fetch(`{% url 'accounts:user_toggle_status' 0 %}`.replace('0', userToToggle), {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                is_active: newStatus
+            })
+        })
+        .then(response => {
+            if (response.ok) {
+                location.reload();
+            } else {
+                alert('Error updating user status');
+            }
+        })
+        .catch(error => {
+            alert('Error updating user status: ' + error.message);
+        });
+    }
+    document.getElementById('statusModal').classList.add('hidden');
+});
+
+document.getElementById('cancelStatusToggle').addEventListener('click', function() {
+    document.getElementById('statusModal').classList.add('hidden');
+    userToToggle = null;
+    newStatus = null;
+});
+
+// Auto-refresh data every 30 seconds for activity updates
+setInterval(function() {
+    // Only refresh if no modals are open
+    if (document.getElementById('statusModal').classList.contains('hidden')) {
+        // Silent refresh of activity data via AJAX could go here
+        // For now, we'll skip this to avoid complexity
+    }
+}, 30000);
+</script>
+{% endblock %}

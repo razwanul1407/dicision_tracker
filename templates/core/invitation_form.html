@@ -1,0 +1,223 @@
+{% extends 'management_base.html' %}
+{% load static %}
+
+{% block title %}{% if form.instance.pk %}Edit Invitation{% else %}Send Invitation{% endif %}{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <!-- Header -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900">
+                    {% if form.instance.pk %}Edit Invitation{% else %}Send Invitation{% endif %}
+                </h1>
+                <p class="text-gray-600 mt-2">
+                    {% if form.instance.pk %}Update invitation details{% else %}Invite team members to events{% endif %}
+                </p>
+            </div>
+            <a href="{% url 'core:invitation_list' %}" 
+               class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md text-sm font-medium">
+                Back to Invitations
+            </a>
+        </div>
+    </div>
+
+    <!-- Form -->
+    <div class="bg-white rounded-lg shadow-md">
+        <form method="post" class="p-6">
+            {% csrf_token %}
+            
+            <!-- Error Messages -->
+            {% if form.non_field_errors %}
+                <div class="mb-6 bg-red-50 border border-red-200 rounded-md p-4">
+                    <div class="flex">
+                        <i class="fas fa-exclamation-triangle text-red-600 mr-2 mt-0.5"></i>
+                        <div>
+                            <h3 class="text-sm font-medium text-red-800">Please correct the following errors:</h3>
+                            <ul class="mt-2 text-sm text-red-700 list-disc list-inside">
+                                {% for error in form.non_field_errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Left Column -->
+                <div class="space-y-6">
+                    <!-- Event Selection -->
+                    <div>
+                        <label for="{{ form.event.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                            Event *
+                        </label>
+                        {{ form.event }}
+                        {% if form.event.errors %}
+                            <p class="mt-1 text-sm text-red-600">{{ form.event.errors.0 }}</p>
+                        {% endif %}
+                        <p class="mt-1 text-sm text-gray-500">Select the event for this invitation</p>
+                    </div>
+
+                    <!-- Invitee Selection -->
+                    <div>
+                        <label for="{{ form.invitee.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                            Invitee *
+                        </label>
+                        {{ form.invitee }}
+                        {% if form.invitee.errors %}
+                            <p class="mt-1 text-sm text-red-600">{{ form.invitee.errors.0 }}</p>
+                        {% endif %}
+                        <p class="mt-1 text-sm text-gray-500">Choose who to invite</p>
+                    </div>
+
+                    <!-- Message -->
+                    <div>
+                        <label for="{{ form.message.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                            Personal Message
+                        </label>
+                        {{ form.message }}
+                        {% if form.message.errors %}
+                            <p class="mt-1 text-sm text-red-600">{{ form.message.errors.0 }}</p>
+                        {% endif %}
+                        <p class="mt-1 text-sm text-gray-500">Add a personal message to the invitation (optional)</p>
+                    </div>
+                </div>
+
+                <!-- Right Column -->
+                <div class="space-y-6">
+                    <!-- Is Mandatory -->
+                    <div>
+                        <div class="flex items-center">
+                            {{ form.is_mandatory }}
+                            <label for="{{ form.is_mandatory.id_for_label }}" class="ml-2 text-sm font-medium text-gray-700">
+                                Mandatory Attendance
+                            </label>
+                        </div>
+                        {% if form.is_mandatory.errors %}
+                            <p class="mt-1 text-sm text-red-600">{{ form.is_mandatory.errors.0 }}</p>
+                        {% endif %}
+                        <p class="mt-1 text-sm text-gray-500">Check if attendance is required for this invitee</p>
+                    </div>
+
+                    <!-- Reminder Time -->
+                    <div>
+                        <label for="{{ form.reminder_time.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                            Reminder Time
+                        </label>
+                        {{ form.reminder_time }}
+                        {% if form.reminder_time.errors %}
+                            <p class="mt-1 text-sm text-red-600">{{ form.reminder_time.errors.0 }}</p>
+                        {% endif %}
+                        <p class="mt-1 text-sm text-gray-500">When to send reminder before the event</p>
+                    </div>
+
+                    <!-- Preview Card -->
+                    {% if form.instance.event %}
+                        <div class="bg-gray-50 rounded-lg p-4">
+                            <h3 class="text-sm font-medium text-gray-900 mb-2">Event Preview</h3>
+                            <div class="space-y-2 text-sm text-gray-600">
+                                <div class="flex items-center">
+                                    <i class="fas fa-calendar mr-2"></i>
+                                    <span>{{ form.instance.event.title }}</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <i class="fas fa-clock mr-2"></i>
+                                    <span>{{ form.instance.event.start_time|date:"M d, Y g:i A" }}</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <i class="fas fa-map-marker-alt mr-2"></i>
+                                    <span>{{ form.instance.event.location|default:"TBD" }}</span>
+                                </div>
+                                {% if form.instance.event.project %}
+                                    <div class="flex items-center">
+                                        <i class="fas fa-folder mr-2"></i>
+                                        <span>{{ form.instance.event.project.name }}</span>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="mt-8 flex justify-end space-x-3 pt-6 border-t border-gray-200">
+                <a href="{% url 'core:invitation_list' %}" 
+                   class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    Cancel
+                </a>
+                <button type="submit" 
+                        class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <i class="fas fa-paper-plane mr-2"></i>
+                    {% if form.instance.pk %}Update Invitation{% else %}Send Invitation{% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Help Section -->
+    <div class="mt-6 bg-blue-50 rounded-lg p-6">
+        <h3 class="text-sm font-medium text-blue-900 mb-2">
+            <i class="fas fa-info-circle mr-2"></i>
+            Invitation Tips
+        </h3>
+        <ul class="text-sm text-blue-800 space-y-1">
+            <li>• Invitations are automatically sent via email when created</li>
+            <li>• Mandatory invitations require a response from the invitee</li>
+            <li>• Reminders will be sent automatically based on the reminder time setting</li>
+            <li>• Invitees can accept, decline, or mark as tentative</li>
+            <li>• You can track responses in the invitation list</li>
+        </ul>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Auto-populate event details when event is selected
+    const eventSelect = document.getElementById('{{ form.event.id_for_label }}');
+    if (eventSelect) {
+        eventSelect.addEventListener('change', function() {
+            // This could fetch event details via AJAX and update the preview
+            // For now, we'll just show a message about the selection
+            console.log('Event selected:', this.value);
+        });
+    }
+
+    // Filter invitees based on event selection
+    const inviteeSelect = document.getElementById('{{ form.invitee.id_for_label }}');
+    if (eventSelect && inviteeSelect) {
+        eventSelect.addEventListener('change', function() {
+            // This could filter available invitees based on project membership
+            // Implementation would require AJAX call to get project members
+        });
+    }
+
+    // Character counter for message field
+    const messageField = document.getElementById('{{ form.message.id_for_label }}');
+    if (messageField) {
+        const maxLength = messageField.getAttribute('maxlength');
+        if (maxLength) {
+            const counter = document.createElement('div');
+            counter.className = 'text-sm text-gray-500 mt-1';
+            counter.textContent = `0 / ${maxLength} characters`;
+            messageField.parentNode.appendChild(counter);
+
+            messageField.addEventListener('input', function() {
+                const currentLength = this.value.length;
+                counter.textContent = `${currentLength} / ${maxLength} characters`;
+                
+                if (currentLength > maxLength * 0.9) {
+                    counter.className = 'text-sm text-yellow-600 mt-1';
+                } else if (currentLength === parseInt(maxLength)) {
+                    counter.className = 'text-sm text-red-600 mt-1';
+                } else {
+                    counter.className = 'text-sm text-gray-500 mt-1';
+                }
+            });
+        }
+    }
+});
+</script>
+{% endblock %}

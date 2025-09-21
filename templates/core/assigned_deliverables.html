@@ -1,0 +1,361 @@
+{% extends 'project_user_base.html' %}
+{% load static %}
+
+{% block title %}Assigned Deliverables{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <!-- Header -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900">Assigned Deliverables</h1>
+                <p class="text-gray-600 mt-2">Tasks and deliverables assigned to you</p>
+            </div>
+            <div class="text-sm text-gray-600">
+                {{ deliverables|length }} assignment{{ deliverables|length|pluralize }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex items-center">
+                <div class="p-2 bg-yellow-100 rounded-lg">
+                    <i class="fas fa-clock text-yellow-600 text-xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">Pending</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ pending_count }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex items-center">
+                <div class="p-2 bg-blue-100 rounded-lg">
+                    <i class="fas fa-play-circle text-blue-600 text-xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">In Progress</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ in_progress_count }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex items-center">
+                <div class="p-2 bg-green-100 rounded-lg">
+                    <i class="fas fa-check-circle text-green-600 text-xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">Completed</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ completed_count }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex items-center">
+                <div class="p-2 bg-red-100 rounded-lg">
+                    <i class="fas fa-exclamation-triangle text-red-600 text-xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">Overdue</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ overdue_count }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Options -->
+    <div class="bg-white rounded-lg shadow-md p-4 mb-6">
+        <div class="flex flex-wrap items-center justify-between gap-4">
+            <div class="flex items-center space-x-4">
+                <a href="?status=all" 
+                   class="px-4 py-2 rounded-md text-sm font-medium {% if not status_filter or status_filter == 'all' %}bg-blue-600 text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
+                    All
+                </a>
+                <a href="?status=pending" 
+                   class="px-4 py-2 rounded-md text-sm font-medium {% if status_filter == 'pending' %}bg-yellow-600 text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
+                    Pending
+                </a>
+                <a href="?status=in_progress" 
+                   class="px-4 py-2 rounded-md text-sm font-medium {% if status_filter == 'in_progress' %}bg-blue-600 text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
+                    In Progress
+                </a>
+                <a href="?status=completed" 
+                   class="px-4 py-2 rounded-md text-sm font-medium {% if status_filter == 'completed' %}bg-green-600 text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
+                    Completed
+                </a>
+                <a href="?status=overdue" 
+                   class="px-4 py-2 rounded-md text-sm font-medium {% if status_filter == 'overdue' %}bg-red-600 text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
+                    Overdue
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Deliverables List -->
+    <div class="space-y-4">
+        {% for deliverable in deliverables %}
+            <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200">
+                <div class="p-6">
+                    <div class="flex items-start justify-between">
+                        <div class="flex-1">
+                            <div class="flex items-center space-x-3 mb-3">
+                                <h3 class="text-lg font-semibold text-gray-900">
+                                    <a href="{% url 'core:deliverable_detail' deliverable.id %}" class="hover:text-blue-600">
+                                        {{ deliverable.title }}
+                                    </a>
+                                </h3>
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                    {% if deliverable.status == 'completed' %}
+                                        bg-green-100 text-green-800
+                                    {% elif deliverable.status == 'in_progress' %}
+                                        bg-blue-100 text-blue-800
+                                    {% elif deliverable.status == 'pending' %}
+                                        bg-yellow-100 text-yellow-800
+                                    {% else %}
+                                        bg-gray-100 text-gray-800
+                                    {% endif %}">
+                                    {{ deliverable.get_status_display }}
+                                </span>
+                                {% if deliverable.priority %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                        {% if deliverable.priority == 'high' %}
+                                            bg-red-100 text-red-800
+                                        {% elif deliverable.priority == 'medium' %}
+                                            bg-yellow-100 text-yellow-800
+                                        {% else %}
+                                            bg-green-100 text-green-800
+                                        {% endif %}">
+                                        {{ deliverable.get_priority_display }}
+                                    </span>
+                                {% endif %}
+                            </div>
+                            
+                            <p class="text-gray-600 mb-4">{{ deliverable.description|truncatechars:150 }}</p>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600 mb-4">
+                                <div class="flex items-center">
+                                    <i class="fas fa-folder mr-2"></i>
+                                    <span>
+                                        {% if deliverable.decision and deliverable.decision.event.project %}
+                                            <a href="{% url 'core:project_detail' deliverable.decision.event.project.id %}" class="hover:text-blue-600">
+                                                {{ deliverable.decision.event.project.name }}
+                                            </a>
+                                        {% else %}
+                                            No Project Assigned
+                                        {% endif %}
+                                    </span>
+                                </div>
+                                <div class="flex items-center">
+                                    <i class="fas fa-calendar mr-2"></i>
+                                    <span>Due: {{ deliverable.due_date|date:"M d, Y" }}</span>
+                                    {% if deliverable.due_date < today and deliverable.status != 'completed' %}
+                                        <span class="ml-2 text-red-600 font-medium">(Overdue)</span>
+                                    {% endif %}
+                                </div>
+                                <div class="flex items-center">
+                                    <i class="fas fa-user mr-2"></i>
+                                    <span>{% if deliverable.decision %}Created by: {{ deliverable.decision.created_by.get_full_name|default:deliverable.decision.created_by.username }}{% else %}Standalone deliverable{% endif %}</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <i class="fas fa-clock mr-2"></i>
+                                    <span>Created: {{ deliverable.created_at|date:"M d, Y" }}</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Progress Bar and Quick Update -->
+                            <div class="mb-4">
+                                <div class="flex justify-between text-sm mb-1">
+                                    <span class="text-gray-600">Progress</span>
+                                    <span class="font-medium" id="progress-display-{{ deliverable.id }}">{{ deliverable.progress }}%</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-3 mb-2">
+                                    <div class="bg-gradient-to-r from-blue-500 to-green-500 h-3 rounded-full transition-all duration-300"
+                                         style="width: {{ deliverable.progress }}%" id="progress-bar-{{ deliverable.id }}"></div>
+                                </div>
+                                
+                                {% if deliverable.status != 'completed' %}
+                                    <div class="flex items-center space-x-2">
+                                        <input type="range" min="0" max="100" value="{{ deliverable.progress }}" 
+                                               class="flex-1 h-2 bg-gray-200 rounded-lg cursor-pointer"
+                                               onchange="updateProgressDisplay({{ deliverable.id }}, this.value)"
+                                               id="progress-slider-{{ deliverable.id }}">
+                                        <button onclick="saveProgress({{ deliverable.id }})"
+                                                class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-xs font-medium">
+                                            Update
+                                        </button>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="ml-6 flex flex-col items-end space-y-2">
+                            <!-- Time Status -->
+                            {% if deliverable.status != 'completed' %}
+                                {% if deliverable.due_date < today %}
+                                    <div class="text-xs text-red-600 font-medium text-right">
+                                        <i class="fas fa-exclamation-triangle mr-1"></i>
+                                        Overdue by {{ deliverable.due_date|timesince }}
+                                    </div>
+                                {% else %}
+                                    <div class="text-xs text-gray-500 text-right">
+                                        <i class="fas fa-hourglass-half mr-1"></i>
+                                        {{ deliverable.due_date|timeuntil }} remaining
+                                    </div>
+                                {% endif %}
+                            {% else %}
+                                <div class="text-xs text-green-600 text-right">
+                                    <i class="fas fa-check-circle mr-1"></i>
+                                    Completed
+                                </div>
+                            {% endif %}
+                            
+                            <!-- Action Buttons -->
+                            <div class="flex space-x-2">
+                                <a href="{% url 'core:deliverable_detail' deliverable.id %}" 
+                                   class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-xs font-medium">
+                                    View
+                                </a>
+                                {% if deliverable.status != 'completed' %}
+                                    <a href="{% url 'core:deliverable_update' deliverable.id %}" 
+                                       class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded-md text-xs font-medium">
+                                        Edit
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <div class="bg-white rounded-lg shadow-md p-12 text-center">
+                <i class="fas fa-clipboard-list text-6xl text-gray-300 mb-4"></i>
+                <h3 class="text-lg font-medium text-gray-900 mb-2">No Assigned Deliverables</h3>
+                <p class="text-gray-600 mb-6">
+                    {% if status_filter and status_filter != 'all' %}
+                        No deliverables found with "{{ status_filter }}" status.
+                    {% else %}
+                        You don't have any deliverables assigned to you yet.
+                    {% endif %}
+                </p>
+                <a href="{% url 'core:my_projects' %}" 
+                   class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium">
+                    View My Projects
+                </a>
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- Overall Progress Summary -->
+    {% if deliverables %}
+        <div class="mt-6 bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">Progress Summary</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <div class="flex justify-between text-sm mb-2">
+                        <span class="text-gray-600">Overall Completion Rate</span>
+                        <span class="font-medium">{{ completion_rate|floatformat:1 }}%</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-4">
+                        <div class="bg-gradient-to-r from-blue-500 to-green-500 h-4 rounded-full transition-all duration-300"
+                             style="width: {{ completion_rate }}%"></div>
+                    </div>
+                    <p class="text-sm text-gray-600 mt-2">
+                        {{ completed_count }} out of {{ deliverables|length }} deliverables completed
+                    </p>
+                </div>
+                <div class="space-y-2">
+                    <div class="flex justify-between text-sm">
+                        <span class="text-yellow-600">Pending Tasks:</span>
+                        <span class="font-medium">{{ pending_count }}</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-blue-600">In Progress:</span>
+                        <span class="font-medium">{{ in_progress_count }}</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-green-600">Completed:</span>
+                        <span class="font-medium">{{ completed_count }}</span>
+                    </div>
+                    {% if overdue_count > 0 %}
+                        <div class="flex justify-between text-sm">
+                            <span class="text-red-600">Overdue:</span>
+                            <span class="font-medium">{{ overdue_count }}</span>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+function updateProgressDisplay(deliverableId, value) {
+    document.getElementById(`progress-display-${deliverableId}`).textContent = value + '%';
+    document.getElementById(`progress-bar-${deliverableId}`).style.width = value + '%';
+}
+
+function saveProgress(deliverableId) {
+    const progressValue = document.getElementById(`progress-slider-${deliverableId}`).value;
+    
+    fetch(`/core/deliverables/${deliverableId}/quick-update/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': getCookie('csrftoken')
+        },
+        body: `progress=${progressValue}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            showMessage('Progress updated successfully!', 'success');
+            
+            // Reload page if task is completed
+            if (parseInt(progressValue) === 100) {
+                setTimeout(() => location.reload(), 1000);
+            }
+        } else {
+            showMessage('Error updating progress: ' + data.error, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showMessage('Error updating progress', 'error');
+    });
+}
+
+function showMessage(message, type) {
+    const messageDiv = document.createElement('div');
+    messageDiv.className = `fixed top-4 right-4 px-4 py-2 rounded-md z-50 ${
+        type === 'success' ? 'bg-green-500' : 'bg-red-500'
+    } text-white`;
+    messageDiv.textContent = message;
+    document.body.appendChild(messageDiv);
+    
+    setTimeout(() => {
+        messageDiv.remove();
+    }, 3000);
+}
+
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+</script>
+{% endblock %}

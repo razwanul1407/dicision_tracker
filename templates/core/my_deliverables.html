@@ -1,0 +1,414 @@
+{% extends 'project_user_base.html' %}
+{% load static %}
+
+{% block title %}My Deliverables{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <!-- Header -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900">My Deliverables</h1>
+                <p class="text-gray-600 mt-2">Tasks and deliverables assigned to you</p>
+            </div>
+            <div class="text-sm text-gray-600">
+                {{ deliverables|length }} deliverable{{ deliverables|length|pluralize }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter and Sort Options -->
+    <div class="bg-white rounded-lg shadow-md p-4 mb-6">
+        <div class="flex flex-wrap items-center justify-between gap-4">
+            <!-- Status Filter -->
+            <div class="flex items-center space-x-2">
+                <label class="text-sm font-medium text-gray-700">Status:</label>
+                <select id="status-filter" class="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        onchange="filterDeliverables()">
+                    <option value="all">All Status</option>
+                    <option value="pending">Pending</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="completed">Completed</option>
+                    <option value="overdue">Overdue</option>
+                </select>
+            </div>
+
+            <!-- Priority Filter -->
+            <div class="flex items-center space-x-2">
+                <label class="text-sm font-medium text-gray-700">Priority:</label>
+                <select id="priority-filter" class="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        onchange="filterDeliverables()">
+                    <option value="all">All Priorities</option>
+                    <option value="high">High</option>
+                    <option value="medium">Medium</option>
+                    <option value="low">Low</option>
+                </select>
+            </div>
+
+            <!-- Sort Options -->
+            <div class="flex items-center space-x-2">
+                <label class="text-sm font-medium text-gray-700">Sort by:</label>
+                <select id="sort-option" class="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        onchange="sortDeliverables()">
+                    <option value="due_date">Due Date</option>
+                    <option value="priority">Priority</option>
+                    <option value="progress">Progress</option>
+                    <option value="created_at">Created Date</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Progress Overview -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex items-center">
+                <div class="p-2 bg-blue-100 rounded-lg">
+                    <i class="fas fa-tasks text-blue-600 text-xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">Total Tasks</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ deliverables|length }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex items-center">
+                <div class="p-2 bg-yellow-100 rounded-lg">
+                    <i class="fas fa-clock text-yellow-600 text-xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">Pending</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ pending_count }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex items-center">
+                <div class="p-2 bg-blue-100 rounded-lg">
+                    <i class="fas fa-play-circle text-blue-600 text-xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">In Progress</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ in_progress_count }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex items-center">
+                <div class="p-2 bg-green-100 rounded-lg">
+                    <i class="fas fa-check-circle text-green-600 text-xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">Completed</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ completed_count }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Deliverables List -->
+    <div id="deliverables-container" class="space-y-4">
+        {% for deliverable in deliverables %}
+            <div class="deliverable-item bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200"
+                 data-status="{{ deliverable.status }}"
+                 data-priority="{{ deliverable.priority }}"
+                 data-due-date="{{ deliverable.due_date|date:'Y-m-d' }}"
+                 data-progress="{{ deliverable.progress }}"
+                 data-created="{{ deliverable.created_at|date:'Y-m-d' }}">
+                <div class="p-6">
+                    <div class="flex items-start justify-between">
+                        <div class="flex-1">
+                            <div class="flex items-center space-x-3 mb-3">
+                                <h3 class="text-lg font-semibold text-gray-900">
+                                    <a href="{% url 'core:deliverable_detail' deliverable.id %}" class="hover:text-blue-600">
+                                        {{ deliverable.title }}
+                                    </a>
+                                </h3>
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                    {% if deliverable.status == 'completed' %}
+                                        bg-green-100 text-green-800
+                                    {% elif deliverable.status == 'in_progress' %}
+                                        bg-blue-100 text-blue-800
+                                    {% elif deliverable.status == 'pending' %}
+                                        bg-yellow-100 text-yellow-800
+                                    {% else %}
+                                        bg-gray-100 text-gray-800
+                                    {% endif %}">
+                                    {{ deliverable.get_status_display }}
+                                </span>
+                                {% if deliverable.priority %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                        {% if deliverable.priority == 'high' %}
+                                            bg-red-100 text-red-800
+                                        {% elif deliverable.priority == 'medium' %}
+                                            bg-yellow-100 text-yellow-800
+                                        {% else %}
+                                            bg-green-100 text-green-800
+                                        {% endif %}">
+                                        {{ deliverable.get_priority_display }} Priority
+                                    </span>
+                                {% endif %}
+                            </div>
+                            
+                            <p class="text-gray-600 mb-4">{{ deliverable.description|truncatechars:150 }}</p>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600 mb-4">
+                                <div class="flex items-center">
+                                    <i class="fas fa-folder mr-2"></i>
+                                    <span>
+                                        {% if deliverable.decision and deliverable.decision.event.project %}
+                                            <a href="{% url 'core:project_detail' deliverable.decision.event.project.id %}" class="hover:text-blue-600">
+                                                {{ deliverable.decision.event.project.name }}
+                                            </a>
+                                        {% else %}
+                                            No Project Assigned
+                                        {% endif %}
+                                    </span>
+                                </div>
+                                <div class="flex items-center">
+                                    <i class="fas fa-calendar mr-2"></i>
+                                    <span>Due: {{ deliverable.due_date|date:"M d, Y" }}</span>
+                                    {% if deliverable.due_date < today and deliverable.status != 'completed' %}
+                                        <span class="ml-2 text-red-600 font-medium">(Overdue)</span>
+                                    {% endif %}
+                                </div>
+                                <div class="flex items-center">
+                                    <i class="fas fa-user mr-2"></i>
+                                    <span>{% if deliverable.decision %}Created by: {{ deliverable.decision.created_by.get_full_name|default:deliverable.decision.created_by.username }}{% else %}Standalone deliverable{% endif %}</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <i class="fas fa-clock mr-2"></i>
+                                    <span>Created: {{ deliverable.created_at|date:"M d, Y" }}</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Progress Bar -->
+                            <div class="mb-4">
+                                <div class="flex justify-between text-sm mb-1">
+                                    <span class="text-gray-600">Progress</span>
+                                    <span class="font-medium">{{ deliverable.progress }}%</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-3">
+                                    <div class="bg-gradient-to-r from-blue-500 to-green-500 h-3 rounded-full transition-all duration-300"
+                                         style="width: {{ deliverable.progress }}%"></div>
+                                </div>
+                            </div>
+                            
+                            <!-- Quick Progress Update -->
+                            {% if deliverable.status != 'completed' %}
+                                <div class="flex items-center space-x-2">
+                                    <label class="text-sm text-gray-600">Quick Update:</label>
+                                    <input type="range" min="0" max="100" value="{{ deliverable.progress }}" 
+                                           class="flex-1 h-2 bg-gray-200 rounded-lg cursor-pointer"
+                                           onchange="updateProgress({{ deliverable.id }}, this.value)"
+                                           id="progress-{{ deliverable.id }}">
+                                    <button onclick="saveProgress({{ deliverable.id }})"
+                                            class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-xs font-medium">
+                                        Save
+                                    </button>
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="ml-6 flex flex-col items-end space-y-2">
+                            <!-- Time Indicators -->
+                            {% if deliverable.status != 'completed' %}
+                                {% if deliverable.due_date < today %}
+                                    <div class="text-xs text-red-600 font-medium">
+                                        <i class="fas fa-exclamation-triangle mr-1"></i>
+                                        Overdue by {{ deliverable.due_date|timesince }}
+                                    </div>
+                                {% else %}
+                                    <div class="text-xs text-gray-500">
+                                        <i class="fas fa-hourglass-half mr-1"></i>
+                                        {{ deliverable.due_date|timeuntil }} remaining
+                                    </div>
+                                {% endif %}
+                            {% else %}
+                                <div class="text-xs text-green-600">
+                                    <i class="fas fa-check-circle mr-1"></i>
+                                    Completed
+                                </div>
+                            {% endif %}
+                            
+                            <!-- Actions -->
+                            <div class="flex space-x-2">
+                                <a href="{% url 'core:deliverable_detail' deliverable.id %}" 
+                                   class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-xs font-medium">
+                                    View Details
+                                </a>
+                                {% if deliverable.status != 'completed' %}
+                                    <a href="{% url 'core:deliverable_update' deliverable.id %}" 
+                                       class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded-md text-xs font-medium">
+                                        Update
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <div class="bg-white rounded-lg shadow-md p-12 text-center">
+                <i class="fas fa-tasks text-6xl text-gray-300 mb-4"></i>
+                <h3 class="text-lg font-medium text-gray-900 mb-2">No Deliverables Yet</h3>
+                <p class="text-gray-600 mb-6">You haven't been assigned any deliverables yet.</p>
+                <a href="{% url 'core:my_projects' %}" 
+                   class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium">
+                    View My Projects
+                </a>
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- Overall Progress -->
+    {% if deliverables %}
+        <div class="mt-6 bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">Overall Progress</h2>
+            <div class="mb-4">
+                <div class="flex justify-between text-sm mb-2">
+                    <span class="text-gray-600">Completion Rate</span>
+                    <span class="font-medium">{{ completion_rate|floatformat:1 }}%</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-4">
+                    <div class="bg-gradient-to-r from-blue-500 to-green-500 h-4 rounded-full transition-all duration-300"
+                         style="width: {{ completion_rate }}%"></div>
+                </div>
+            </div>
+            <p class="text-sm text-gray-600">
+                You've completed {{ completed_count }} out of {{ deliverables|length }} assigned deliverables
+            </p>
+        </div>
+    {% endif %}
+</div>
+
+<script>
+// Filter and Sort Functions
+function filterDeliverables() {
+    const statusFilter = document.getElementById('status-filter').value;
+    const priorityFilter = document.getElementById('priority-filter').value;
+    const deliverables = document.querySelectorAll('.deliverable-item');
+    const today = new Date().toISOString().split('T')[0];
+    
+    deliverables.forEach(item => {
+        let show = true;
+        
+        // Status filter
+        if (statusFilter !== 'all') {
+            if (statusFilter === 'overdue') {
+                const dueDate = item.dataset.dueDate;
+                const status = item.dataset.status;
+                show = show && (dueDate < today && status !== 'completed');
+            } else {
+                show = show && (item.dataset.status === statusFilter);
+            }
+        }
+        
+        // Priority filter
+        if (priorityFilter !== 'all') {
+            show = show && (item.dataset.priority === priorityFilter);
+        }
+        
+        item.style.display = show ? 'block' : 'none';
+    });
+}
+
+function sortDeliverables() {
+    const sortBy = document.getElementById('sort-option').value;
+    const container = document.getElementById('deliverables-container');
+    const items = Array.from(container.children);
+    
+    items.sort((a, b) => {
+        let aValue, bValue;
+        
+        switch(sortBy) {
+            case 'due_date':
+                aValue = new Date(a.dataset.dueDate);
+                bValue = new Date(b.dataset.dueDate);
+                break;
+            case 'priority':
+                const priorityOrder = {high: 3, medium: 2, low: 1};
+                aValue = priorityOrder[a.dataset.priority] || 0;
+                bValue = priorityOrder[b.dataset.priority] || 0;
+                return bValue - aValue; // Reverse order for priority
+            case 'progress':
+                aValue = parseInt(a.dataset.progress);
+                bValue = parseInt(b.dataset.progress);
+                break;
+            case 'created_at':
+                aValue = new Date(a.dataset.created);
+                bValue = new Date(b.dataset.created);
+                return bValue - aValue; // Reverse order for created date
+            default:
+                return 0;
+        }
+        
+        return aValue > bValue ? 1 : -1;
+    });
+    
+    items.forEach(item => container.appendChild(item));
+}
+
+// Progress Update Functions
+function updateProgress(deliverableId, value) {
+    const display = document.querySelector(`#progress-${deliverableId}`).parentElement.previousElementSibling.querySelector('.font-medium');
+    display.textContent = value + '%';
+    
+    const progressBar = document.querySelector(`#progress-${deliverableId}`).parentElement.previousElementSibling.querySelector('.bg-gradient-to-r');
+    progressBar.style.width = value + '%';
+}
+
+function saveProgress(deliverableId) {
+    const progressValue = document.querySelector(`#progress-${deliverableId}`).value;
+    
+    fetch(`/core/deliverables/${deliverableId}/quick-update/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: `progress=${progressValue}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show success message
+            const message = document.createElement('div');
+            message.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-md z-50';
+            message.textContent = 'Progress updated successfully!';
+            document.body.appendChild(message);
+            
+            setTimeout(() => {
+                message.remove();
+            }, 3000);
+            
+            // Update status badge if progress is 100%
+            if (parseInt(progressValue) === 100) {
+                location.reload();
+            }
+        } else {
+            alert('Error updating progress: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error updating progress');
+    });
+}
+
+// Add CSRF token for AJAX requests
+const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+if (!csrfToken) {
+    const token = document.createElement('input');
+    token.type = 'hidden';
+    token.name = 'csrfmiddlewaretoken';
+    token.value = '{{ csrf_token }}';
+    document.body.appendChild(token);
+}
+</script>
+{% endblock %}

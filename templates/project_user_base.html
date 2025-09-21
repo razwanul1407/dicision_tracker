@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% load permission_tags %}
+
+{% block sidebar %}
+    <!-- Project User Sidebar -->
+    <a href="{% url 'dashboard:project_user_dashboard' %}" class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 sidebar-nav">
+        <i class="fas fa-tachometer-alt mr-3"></i>
+        My Dashboard
+    </a>
+    
+    {% if user|has_permission:'can_view_projects' %}
+    <a href="{% url 'core:my_projects' %}" class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 sidebar-nav">
+        <i class="fas fa-folder mr-3"></i>
+        My Projects
+    </a>
+    {% endif %}
+    
+    {% if user|has_permission:'can_manage_deliverables' %}
+    <a href="{% url 'core:my_deliverables' %}" class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 sidebar-nav">
+        <i class="fas fa-tasks mr-3"></i>
+        My Tasks
+    </a>
+    
+    {% comment %} <a href="{% url 'core:assigned_deliverables' %}" class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 sidebar-nav">
+        <i class="fas fa-clipboard-list mr-3"></i>
+        Assigned Tasks
+    </a> {% endcomment %}
+    {% endif %}
+    
+    {% if user|has_permission:'can_view_events' %}
+    <a href="{% url 'core:my_events' %}" class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 sidebar-nav">
+        <i class="fas fa-calendar mr-3"></i>
+        My Events
+    </a>
+    {% endif %}
+    
+    {% if user|has_permission:'can_view_decisions' %}
+    <a href="{% url 'core:my_decisions' %}" class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 sidebar-nav">
+        <i class="fas fa-gavel mr-3"></i>
+        My Decisions
+    </a>
+    {% endif %}
+    
+    {% if user|has_permission:'can_view_calendar' %}
+    <a href="{% url 'dashboard:calendar' %}" class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 sidebar-nav">
+        <i class="fas fa-calendar-alt mr-3"></i>
+        Calendar
+    </a>
+    {% endif %}
+    
+    {% if user|has_permission:'can_manage_invitations' %}
+    <a href="{% url 'core:my_invitations' %}" class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 sidebar-nav">
+        <i class="fas fa-envelope mr-3"></i>
+        My Invitations
+    </a>
+    {% endif %}
+    
+    <!-- Personal Tools Section - only show if user has any tool permissions -->
+    {% user_can user 'can_track_progress' as can_track %}
+    {% user_can user 'can_use_time_tracker' as can_time_track %}
+    {% user_can user 'can_view_reports' as can_reports %}
+    
+    {% if can_track or can_time_track or can_reports %}
+    <div class="px-4 py-2 text-gray-500 text-sm font-medium uppercase tracking-wider">
+        Personal Tools
+    </div>
+    
+    {% if can_track %}
+    <a href="{% url 'core:task_progress' %}" class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 sidebar-nav">
+        <i class="fas fa-chart-line mr-3"></i>
+        Progress Tracking
+    </a>
+    {% endif %}
+    
+    {% if can_time_track %}
+    <a href="{% url 'core:time_tracker' %}" class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 sidebar-nav">
+        <i class="fas fa-stopwatch mr-3"></i>
+        Time Tracker
+    </a>
+    {% endif %}
+    
+    {% if can_reports %}
+    <a href="{% url 'dashboard:reports' %}" class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 sidebar-nav">
+        <i class="fas fa-chart-bar mr-3"></i>
+        My Reports
+    </a>
+    {% endif %}
+    {% endif %}
+{% endblock %}

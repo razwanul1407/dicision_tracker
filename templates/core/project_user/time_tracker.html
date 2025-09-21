@@ -1,0 +1,368 @@
+{% extends 'project_user_base.html' %}
+{% load static %}
+
+{% block title %}Time Tracker{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <!-- Header -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900">Time Tracker</h1>
+                <p class="text-gray-600 mt-2">Track time spent on tasks and projects</p>
+            </div>
+            <div class="text-right">
+                <p class="text-sm text-gray-600">Today's Total</p>
+                <p class="text-2xl font-bold text-blue-600" id="daily-total">0h 0m</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Timer -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <div class="text-center">
+                    <p class="text-3xl font-mono font-bold text-gray-900" id="timer-display">00:00:00</p>
+                    <p class="text-sm text-gray-600">Current Session</p>
+                </div>
+                <div class="border-l border-gray-300 pl-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Working on:</label>
+                    <select id="active-task" class="w-64 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="">Select a task...</option>
+                        {% for task in recent_tasks %}
+                            <option value="{{ task.id }}">{{ task.title }} ({{ task.project.name }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="flex space-x-2">
+                <button id="start-timer" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md font-medium">
+                    <i class="fas fa-play mr-2"></i>Start
+                </button>
+                <button id="pause-timer" class="bg-yellow-600 hover:bg-yellow-700 text-white px-6 py-2 rounded-md font-medium" disabled>
+                    <i class="fas fa-pause mr-2"></i>Pause
+                </button>
+                <button id="stop-timer" class="bg-red-600 hover:bg-red-700 text-white px-6 py-2 rounded-md font-medium" disabled>
+                    <i class="fas fa-stop mr-2"></i>Stop
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Today's Time Entries -->
+        <div class="bg-white rounded-lg shadow-md">
+            <div class="p-6 border-b border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-900">Today's Time Entries</h2>
+                <p class="text-sm text-gray-600">{{ "now"|date:"F d, Y" }}</p>
+            </div>
+            <div id="today-entries" class="divide-y divide-gray-200 max-h-96 overflow-y-auto">
+                <!-- Time entries will be populated here -->
+                <div class="p-6 text-center text-gray-500">
+                    <i class="fas fa-clock text-4xl mb-4"></i>
+                    <p>No time entries for today. Start tracking to see your progress!</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Project Time Summary -->
+        <div class="bg-white rounded-lg shadow-md">
+            <div class="p-6 border-b border-gray-200">
+                <h2 class="text-lg font-semibold text-gray-900">Project Time Summary</h2>
+                <p class="text-sm text-gray-600">This week's time allocation</p>
+            </div>
+            <div class="p-6">
+                {% for project in user_projects %}
+                    <div class="mb-4">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-sm font-medium text-gray-900">{{ project.name }}</span>
+                            <span class="text-sm text-gray-600" id="project-time-{{ project.id }}">0h 0m</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="bg-blue-600 h-2 rounded-full transition-all duration-300" 
+                                 style="width: 0%" id="project-progress-{{ project.id }}"></div>
+                        </div>
+                    </div>
+                {% empty %}
+                    <div class="text-center text-gray-500">
+                        <i class="fas fa-folder-open text-4xl mb-4"></i>
+                        <p>No projects assigned.</p>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Tasks Quick Access -->
+    <div class="mt-6 bg-white rounded-lg shadow-md">
+        <div class="p-6 border-b border-gray-200">
+            <h2 class="text-lg font-semibold text-gray-900">Quick Task Access</h2>
+            <p class="text-sm text-gray-600">Click to start tracking time on these tasks</p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-6">
+            {% for task in recent_tasks %}
+                <div class="border border-gray-200 rounded-lg p-4 hover:border-blue-300 transition-colors cursor-pointer task-card" 
+                     data-task-id="{{ task.id }}" data-task-title="{{ task.title }}">
+                    <div class="flex items-center justify-between mb-2">
+                        <h3 class="text-sm font-medium text-gray-900">{{ task.title }}</h3>
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
+                            {% if task.status == 'completed' %}
+                                bg-green-100 text-green-800
+                            {% elif task.status == 'in_progress' %}
+                                bg-blue-100 text-blue-800
+                            {% else %}
+                                bg-yellow-100 text-yellow-800
+                            {% endif %}">
+                            {{ task.get_status_display }}
+                        </span>
+                    </div>
+                    <p class="text-xs text-gray-600 mb-2">{{ task.project.name }}</p>
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs text-gray-500">
+                            <i class="fas fa-calendar mr-1"></i>
+                            Due: {{ task.due_date|date:"M d" }}
+                        </span>
+                        <button class="text-blue-600 hover:text-blue-700 text-xs font-medium start-task-timer"
+                                data-task-id="{{ task.id }}">
+                            <i class="fas fa-play mr-1"></i>Start Timer
+                        </button>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="col-span-full text-center text-gray-500 py-8">
+                    <i class="fas fa-tasks text-4xl mb-4"></i>
+                    <p>No recent tasks found.</p>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Time Statistics -->
+    <div class="mt-6 grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="text-center">
+                <div class="text-2xl font-bold text-blue-600" id="today-hours">0</div>
+                <div class="text-sm text-gray-600">Hours Today</div>
+            </div>
+        </div>
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="text-center">
+                <div class="text-2xl font-bold text-green-600" id="week-hours">0</div>
+                <div class="text-sm text-gray-600">Hours This Week</div>
+            </div>
+        </div>
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="text-center">
+                <div class="text-2xl font-bold text-purple-600" id="avg-session">0</div>
+                <div class="text-sm text-gray-600">Avg Session (min)</div>
+            </div>
+        </div>
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="text-center">
+                <div class="text-2xl font-bold text-yellow-600" id="total-sessions">0</div>
+                <div class="text-sm text-gray-600">Sessions Today</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Time Tracker JavaScript
+class TimeTracker {
+    constructor() {
+        this.startTime = null;
+        this.elapsedTime = 0;
+        this.timerInterval = null;
+        this.isRunning = false;
+        this.currentTask = null;
+        this.timeEntries = [];
+        
+        this.initializeElements();
+        this.bindEvents();
+        this.loadStoredData();
+    }
+    
+    initializeElements() {
+        this.timerDisplay = document.getElementById('timer-display');
+        this.startBtn = document.getElementById('start-timer');
+        this.pauseBtn = document.getElementById('pause-timer');
+        this.stopBtn = document.getElementById('stop-timer');
+        this.activeTaskSelect = document.getElementById('active-task');
+        this.todayEntries = document.getElementById('today-entries');
+    }
+    
+    bindEvents() {
+        this.startBtn.addEventListener('click', () => this.start());
+        this.pauseBtn.addEventListener('click', () => this.pause());
+        this.stopBtn.addEventListener('click', () => this.stop());
+        
+        // Quick start buttons for tasks
+        document.querySelectorAll('.start-task-timer').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const taskId = btn.dataset.taskId;
+                this.selectTask(taskId);
+                this.start();
+            });
+        });
+    }
+    
+    start() {
+        if (!this.activeTaskSelect.value) {
+            alert('Please select a task to track time for.');
+            return;
+        }
+        
+        this.currentTask = this.activeTaskSelect.value;
+        this.startTime = Date.now() - this.elapsedTime;
+        this.isRunning = true;
+        
+        this.timerInterval = setInterval(() => this.updateDisplay(), 1000);
+        
+        this.startBtn.disabled = true;
+        this.pauseBtn.disabled = false;
+        this.stopBtn.disabled = false;
+    }
+    
+    pause() {
+        this.isRunning = false;
+        clearInterval(this.timerInterval);
+        
+        this.startBtn.disabled = false;
+        this.pauseBtn.disabled = true;
+        this.stopBtn.disabled = false;
+    }
+    
+    stop() {
+        this.isRunning = false;
+        clearInterval(this.timerInterval);
+        
+        if (this.elapsedTime > 0) {
+            this.saveTimeEntry();
+        }
+        
+        this.reset();
+    }
+    
+    reset() {
+        this.elapsedTime = 0;
+        this.startTime = null;
+        this.currentTask = null;
+        this.updateDisplay();
+        
+        this.startBtn.disabled = false;
+        this.pauseBtn.disabled = true;
+        this.stopBtn.disabled = true;
+        this.activeTaskSelect.value = '';
+    }
+    
+    updateDisplay() {
+        if (this.isRunning) {
+            this.elapsedTime = Date.now() - this.startTime;
+        }
+        
+        const time = new Date(this.elapsedTime);
+        const hours = String(Math.floor(this.elapsedTime / 3600000)).padStart(2, '0');
+        const minutes = String(time.getUTCMinutes()).padStart(2, '0');
+        const seconds = String(time.getUTCSeconds()).padStart(2, '0');
+        
+        this.timerDisplay.textContent = `${hours}:${minutes}:${seconds}`;
+    }
+    
+    selectTask(taskId) {
+        this.activeTaskSelect.value = taskId;
+    }
+    
+    saveTimeEntry() {
+        const entry = {
+            taskId: this.currentTask,
+            taskTitle: this.activeTaskSelect.options[this.activeTaskSelect.selectedIndex].text,
+            duration: this.elapsedTime,
+            startTime: this.startTime,
+            endTime: Date.now()
+        };
+        
+        this.timeEntries.push(entry);
+        this.updateTodayEntries();
+        this.updateStatistics();
+        
+        // Save to localStorage
+        localStorage.setItem('timeEntries', JSON.stringify(this.timeEntries));
+    }
+    
+    updateTodayEntries() {
+        const today = new Date().toDateString();
+        const todayEntries = this.timeEntries.filter(entry => 
+            new Date(entry.startTime).toDateString() === today
+        );
+        
+        if (todayEntries.length === 0) {
+            this.todayEntries.innerHTML = `
+                <div class="p-6 text-center text-gray-500">
+                    <i class="fas fa-clock text-4xl mb-4"></i>
+                    <p>No time entries for today. Start tracking to see your progress!</p>
+                </div>
+            `;
+            return;
+        }
+        
+        this.todayEntries.innerHTML = todayEntries.map(entry => {
+            const duration = new Date(entry.duration);
+            const hours = Math.floor(entry.duration / 3600000);
+            const minutes = duration.getUTCMinutes();
+            const startTime = new Date(entry.startTime).toLocaleTimeString();
+            
+            return `
+                <div class="p-4">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <p class="text-sm font-medium text-gray-900">${entry.taskTitle}</p>
+                            <p class="text-xs text-gray-600">Started at ${startTime}</p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-sm font-medium text-gray-900">${hours}h ${minutes}m</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }).join('');
+    }
+    
+    updateStatistics() {
+        const today = new Date().toDateString();
+        const todayEntries = this.timeEntries.filter(entry => 
+            new Date(entry.startTime).toDateString() === today
+        );
+        
+        const todayTotal = todayEntries.reduce((sum, entry) => sum + entry.duration, 0);
+        const todayHours = Math.floor(todayTotal / 3600000);
+        const todayMinutes = Math.floor((todayTotal % 3600000) / 60000);
+        
+        document.getElementById('today-hours').textContent = todayHours;
+        document.getElementById('total-sessions').textContent = todayEntries.length;
+        document.getElementById('daily-total').textContent = `${todayHours}h ${todayMinutes}m`;
+        
+        if (todayEntries.length > 0) {
+            const avgSession = Math.floor((todayTotal / todayEntries.length) / 60000);
+            document.getElementById('avg-session').textContent = avgSession;
+        }
+    }
+    
+    loadStoredData() {
+        const stored = localStorage.getItem('timeEntries');
+        if (stored) {
+            this.timeEntries = JSON.parse(stored);
+            this.updateTodayEntries();
+            this.updateStatistics();
+        }
+    }
+}
+
+// Initialize time tracker when page loads
+document.addEventListener('DOMContentLoaded', () => {
+    new TimeTracker();
+});
+</script>
+{% endblock %}

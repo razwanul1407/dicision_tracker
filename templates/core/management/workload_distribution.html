@@ -1,0 +1,230 @@
+{% extends 'management_base.html' %}
+{% load static %}
+
+{% block title %}Workload Distribution{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <!-- Header -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900">Workload Distribution</h1>
+                <p class="text-gray-600 mt-2">Analyze and balance team workload across projects</p>
+            </div>
+            <a href="{% url 'core:team_overview' %}" 
+               class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md text-sm font-medium">
+                Back to Overview
+            </a>
+        </div>
+    </div>
+
+    <!-- Team Workload Analysis -->
+    <div class="bg-white rounded-lg shadow-md mb-6">
+        <div class="p-6 border-b border-gray-200">
+            <h2 class="text-lg font-semibold text-gray-900">Team Member Workload</h2>
+            <p class="text-sm text-gray-600">Current task distribution and completion rates</p>
+        </div>
+        
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Team Member
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Total Tasks
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Pending
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Completed
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Overdue
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Completion Rate
+                        </th>
+                        <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            Workload Status
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-gray-200">
+                    {% for workload in team_workload %}
+                        <tr class="hover:bg-gray-50">
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <div class="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
+                                        <i class="fas fa-user text-gray-600"></i>
+                                    </div>
+                                    <div class="ml-4">
+                                        <div class="text-sm font-medium text-gray-900">
+                                            {{ workload.member.get_full_name|default:workload.member.username }}
+                                        </div>
+                                        <div class="text-sm text-gray-500">{{ workload.member.email }}</div>
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
+                                            {% if workload.member.role == 'admin' %}
+                                                bg-red-100 text-red-800
+                                            {% elif workload.member.role == 'management' %}
+                                                bg-blue-100 text-blue-800
+                                            {% else %}
+                                                bg-green-100 text-green-800
+                                            {% endif %}">
+                                            {{ workload.member.get_role_display }}
+                                        </span>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm font-medium text-gray-900">{{ workload.total_tasks }}</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-gray-900">{{ workload.pending_tasks }}</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="text-sm text-green-600 font-medium">{{ workload.completed_tasks }}</div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                {% if workload.overdue_tasks > 0 %}
+                                    <div class="text-sm text-red-600 font-medium">{{ workload.overdue_tasks }}</div>
+                                {% else %}
+                                    <div class="text-sm text-gray-400">0</div>
+                                {% endif %}
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                <div class="flex items-center">
+                                    <div class="w-16 bg-gray-200 rounded-full h-2 mr-2">
+                                        <div class="bg-blue-600 h-2 rounded-full" 
+                                             style="width: {{ workload.completion_rate }}%"></div>
+                                    </div>
+                                    <span class="text-sm text-gray-900">{{ workload.completion_rate|floatformat:0 }}%</span>
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap">
+                                {% if workload.pending_tasks > 10 %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                        Overloaded
+                                    </span>
+                                {% elif workload.pending_tasks > 5 %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+                                        High Load
+                                    </span>
+                                {% elif workload.pending_tasks > 0 %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                        Normal
+                                    </span>
+                                {% else %}
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                        Available
+                                    </span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="7" class="px-6 py-4 text-center text-gray-500">
+                                <i class="fas fa-users text-4xl mb-4"></i>
+                                <p>No team members found.</p>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Workload Distribution Chart -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Task Distribution</h3>
+            <div class="space-y-4">
+                {% for workload in team_workload %}
+                    <div>
+                        <div class="flex justify-between text-sm">
+                            <span class="font-medium text-gray-700">{{ workload.member.get_full_name|default:workload.member.username }}</span>
+                            <span class="text-gray-500">{{ workload.total_tasks }} tasks</span>
+                        </div>
+                        <div class="mt-1 w-full bg-gray-200 rounded-full h-2">
+                            <div class="bg-gradient-to-r from-blue-500 to-purple-600 h-2 rounded-full transition-all duration-300"
+                                 style="width: {{ workload.workload_percentage }}%"></div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">Performance Summary</h3>
+            <div class="space-y-4">
+                {% for workload in team_workload %}
+                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                        <div>
+                            <p class="text-sm font-medium text-gray-900">
+                                {{ workload.member.get_full_name|default:workload.member.username }}
+                            </p>
+                            <p class="text-xs text-gray-500">{{ workload.completion_rate|floatformat:1 }}% completion rate</p>
+                        </div>
+                        <div class="text-right">
+                            {% if workload.overdue_tasks > 0 %}
+                                <p class="text-sm text-red-600 font-medium">{{ workload.overdue_tasks }} overdue</p>
+                            {% else %}
+                                <p class="text-sm text-green-600 font-medium">On track</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Recommendations -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Workload Recommendations</h3>
+        <div class="space-y-3">
+            {% for workload in team_workload %}
+                {% if workload.pending_tasks > 10 %}
+                    <div class="flex items-start p-4 bg-red-50 rounded-lg border border-red-200">
+                        <i class="fas fa-exclamation-triangle text-red-600 mt-1 mr-3"></i>
+                        <div>
+                            <p class="text-sm font-medium text-red-800">
+                                {{ workload.member.get_full_name|default:workload.member.username }} is overloaded
+                            </p>
+                            <p class="text-sm text-red-700">
+                                Consider reassigning some of their {{ workload.pending_tasks }} pending tasks to other team members.
+                            </p>
+                        </div>
+                    </div>
+                {% elif workload.overdue_tasks > 0 %}
+                    <div class="flex items-start p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+                        <i class="fas fa-clock text-yellow-600 mt-1 mr-3"></i>
+                        <div>
+                            <p class="text-sm font-medium text-yellow-800">
+                                {{ workload.member.get_full_name|default:workload.member.username }} has overdue tasks
+                            </p>
+                            <p class="text-sm text-yellow-700">
+                                {{ workload.overdue_tasks }} task{{ workload.overdue_tasks|pluralize }} are past due and need immediate attention.
+                            </p>
+                        </div>
+                    </div>
+                {% elif workload.pending_tasks == 0 %}
+                    <div class="flex items-start p-4 bg-green-50 rounded-lg border border-green-200">
+                        <i class="fas fa-check-circle text-green-600 mt-1 mr-3"></i>
+                        <div>
+                            <p class="text-sm font-medium text-green-800">
+                                {{ workload.member.get_full_name|default:workload.member.username }} is available for new tasks
+                            </p>
+                            <p class="text-sm text-green-700">
+                                This team member has completed all current tasks and can take on additional work.
+                            </p>
+                        </div>
+                    </div>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

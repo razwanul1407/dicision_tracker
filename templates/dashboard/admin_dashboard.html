@@ -1,0 +1,187 @@
+{% extends "admin_base.html" %}
+
+{% block page_title %}Admin Dashboard{% endblock %}
+
+{% block content %}
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+    <!-- Statistics Cards -->
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="p-5">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-users text-indigo-600 text-2xl"></i>
+                </div>
+                <div class="ml-5 w-0 flex-1">
+                    <dl>
+                        <dt class="text-sm font-medium text-gray-500 truncate">Total Users</dt>
+                        <dd class="text-lg font-medium text-gray-900">{{ total_users }}</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="p-5">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-folder text-green-600 text-2xl"></i>
+                </div>
+                <div class="ml-5 w-0 flex-1">
+                    <dl>
+                        <dt class="text-sm font-medium text-gray-500 truncate">Total Projects</dt>
+                        <dd class="text-lg font-medium text-gray-900">{{ total_projects }}</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="p-5">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-calendar text-blue-600 text-2xl"></i>
+                </div>
+                <div class="ml-5 w-0 flex-1">
+                    <dl>
+                        <dt class="text-sm font-medium text-gray-500 truncate">Total Events</dt>
+                        <dd class="text-lg font-medium text-gray-900">{{ total_events }}</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="p-5">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-tasks text-yellow-600 text-2xl"></i>
+                </div>
+                <div class="ml-5 w-0 flex-1">
+                    <dl>
+                        <dt class="text-sm font-medium text-gray-500 truncate">Total Deliverables</dt>
+                        <dd class="text-lg font-medium text-gray-900">{{ total_deliverables }}</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Recent Projects -->
+    <div class="bg-white shadow rounded-lg">
+        <div class="px-4 py-5 sm:p-6">
+            <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Recent Projects</h3>
+            <div class="flow-root">
+                <ul class="-my-5 divide-y divide-gray-200">
+                    {% for project in recent_projects %}
+                    <li class="py-4">
+                        <div class="flex items-center space-x-4">
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-medium text-gray-900 truncate">
+                                    {{ project.name }}
+                                </p>
+                                <p class="text-sm text-gray-500">
+                                    Created by {{ project.created_by.get_full_name }}
+                                </p>
+                            </div>
+                            <div class="text-sm text-gray-500">
+                                {{ project.created_at|date:"M d, Y" }}
+                            </div>
+                        </div>
+                    </li>
+                    {% empty %}
+                    <li class="py-4 text-gray-500">No projects yet</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Upcoming Events -->
+    <div class="bg-white shadow rounded-lg">
+        <div class="px-4 py-5 sm:p-6">
+            <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Upcoming Events</h3>
+            <div class="flow-root">
+                <ul class="-my-5 divide-y divide-gray-200">
+                    {% for event in upcoming_events %}
+                    <li class="py-4">
+                        <div class="flex items-center space-x-4">
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-medium text-gray-900 truncate">
+                                    {{ event.title }}
+                                </p>
+                                <p class="text-sm text-gray-500">
+                                    {{ event.project.name }} - {{ event.organizer.get_full_name }}
+                                </p>
+                            </div>
+                            <div class="text-sm text-gray-500">
+                                {{ event.start_time|date:"M d, H:i" }}
+                            </div>
+                        </div>
+                    </li>
+                    {% empty %}
+                    <li class="py-4 text-gray-500">No upcoming events</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if conflicting_events %}
+<div class="mt-6">
+    <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+        <div class="flex">
+            <div class="flex-shrink-0">
+                <i class="fas fa-exclamation-triangle text-red-400"></i>
+            </div>
+            <div class="ml-3">
+                <h3 class="text-sm font-medium text-red-800">Event Conflicts Detected</h3>
+                <div class="mt-2 text-sm text-red-700">
+                    <ul class="list-disc pl-5 space-y-1">
+                        {% for conflict in conflicting_events %}
+                        <li>{{ conflict.event.title }} conflicts with {{ conflict.conflicts.count }} other event{{ conflict.conflicts.count|pluralize }}</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if overdue_deliverables %}
+<div class="mt-6">
+    <div class="bg-white shadow rounded-lg">
+        <div class="px-4 py-5 sm:p-6">
+            <h3 class="text-lg leading-6 font-medium text-red-600 mb-4">Overdue Deliverables</h3>
+            <div class="flow-root">
+                <ul class="-my-5 divide-y divide-gray-200">
+                    {% for deliverable in overdue_deliverables %}
+                    <li class="py-4">
+                        <div class="flex items-center space-x-4">
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-medium text-gray-900 truncate">
+                                    {{ deliverable.title }}
+                                </p>
+                                <p class="text-sm text-gray-500">
+                                    Assigned to {{ deliverable.assigned_to.get_full_name }}
+                                </p>
+                            </div>
+                            <div class="text-sm text-red-600">
+                                Due: {{ deliverable.due_date|date:"M d, Y" }}
+                            </div>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

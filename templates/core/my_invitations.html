@@ -1,0 +1,367 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block title %}My Invitations{% endblock %}
+
+{% block page_title %}My Invitations{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <!-- Header -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900">Event Invitations</h1>
+                <p class="text-gray-600 mt-2">Manage invitations to events</p>
+            </div>
+            <div class="text-sm text-gray-600">
+                {{ invitations|length }} invitation{{ invitations|length|pluralize }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter and Sort Options -->
+    <div class="bg-white rounded-lg shadow-md p-4 mb-6">
+        <div class="flex flex-wrap items-center justify-between gap-4">
+            <!-- Status Filter -->
+            <div class="flex items-center space-x-2">
+                <label class="text-sm font-medium text-gray-700">Status:</label>
+                <select id="status-filter" class="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        onchange="filterInvitations()">
+                    <option value="all">All Status</option>
+                    <option value="pending">Pending</option>
+                    <option value="accepted">Accepted</option>
+                    <option value="declined">Declined</option>
+                </select>
+            </div>
+
+            <!-- Sort Options -->
+            <div class="flex items-center space-x-2">
+                <label class="text-sm font-medium text-gray-700">Sort by:</label>
+                <select id="sort-option" class="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        onchange="sortInvitations()">
+                    <option value="created_at">Newest First</option>
+                    <option value="event_date">Event Date</option>
+                    <option value="status">Status</option>
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex items-center">
+                <div class="p-2 bg-blue-100 rounded-lg">
+                    <i class="fas fa-envelope text-blue-600 text-xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">Total</p>
+                    <p class="text-2xl font-bold text-gray-900">{{ invitations|length }}</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex items-center">
+                <div class="p-2 bg-yellow-100 rounded-lg">
+                    <i class="fas fa-clock text-yellow-600 text-xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">Pending</p>
+                    <p class="text-2xl font-bold text-gray-900">
+                        {{ invitations|length|add:0 }}
+                        {% for invitation in invitations %}
+                            {% if invitation.status == 'pending' %}{% if forloop.first %}{{ forloop.counter0|add:1 }}{% else %}{% if forloop.counter == 2 %}1{% else %}{{ forloop.counter|add:-1 }}{% endif %}{% endif %}{% endif %}
+                        {% endfor %}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex items-center">
+                <div class="p-2 bg-green-100 rounded-lg">
+                    <i class="fas fa-check-circle text-green-600 text-xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">Accepted</p>
+                    <p class="text-2xl font-bold text-gray-900" id="accepted-count">-</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex items-center">
+                <div class="p-2 bg-red-100 rounded-lg">
+                    <i class="fas fa-times-circle text-red-600 text-xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">Declined</p>
+                    <p class="text-2xl font-bold text-gray-900" id="declined-count">-</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Invitations List -->
+    <div id="invitations-container" class="space-y-4">
+        {% for invitation in invitations %}
+            <div class="invitation-item bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200"
+                 data-status="{{ invitation.status }}"
+                 data-event-date="{{ invitation.event.start_time|date:'Y-m-d' }}"
+                 data-created="{{ invitation.created_at|date:'Y-m-d' }}">
+                <div class="p-6">
+                    <div class="flex items-start justify-between">
+                        <div class="flex-1">
+                            <div class="flex items-center space-x-3 mb-3">
+                                <h3 class="text-lg font-semibold text-gray-900">
+                                    <a href="{% url 'core:event_detail' invitation.event.id %}" class="hover:text-blue-600">
+                                        {{ invitation.event.title }}
+                                    </a>
+                                </h3>
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                    {% if invitation.status == 'accepted' %}
+                                        bg-green-100 text-green-800
+                                    {% elif invitation.status == 'declined' %}
+                                        bg-red-100 text-red-800
+                                    {% else %}
+                                        bg-yellow-100 text-yellow-800
+                                    {% endif %}">
+                                    {{ invitation.get_status_display }}
+                                </span>
+                            </div>
+                            
+                            <p class="text-gray-600 mb-4">{{ invitation.event.description|truncatechars:150 }}</p>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600 mb-4">
+                                <div class="flex items-center">
+                                    <i class="fas fa-calendar mr-2"></i>
+                                    <span>{{ invitation.event.start_time|date:"M d, Y H:i" }}</span>
+                                    {% if invitation.event.end_time %}
+                                        <span class="mx-2">-</span>
+                                        <span>{{ invitation.event.end_time|date:"H:i" }}</span>
+                                    {% endif %}
+                                </div>
+                                <div class="flex items-center">
+                                    <i class="fas fa-map-marker-alt mr-2"></i>
+                                    <span>{{ invitation.event.location|default:"No location specified" }}</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <i class="fas fa-folder mr-2"></i>
+                                    <span>
+                                        {% if invitation.event.project %}
+                                            <a href="{% url 'core:project_detail' invitation.event.project.id %}" class="hover:text-blue-600">
+                                                {{ invitation.event.project.name }}
+                                            </a>
+                                        {% else %}
+                                            General Event
+                                        {% endif %}
+                                    </span>
+                                </div>
+                                <div class="flex items-center">
+                                    <i class="fas fa-user mr-2"></i>
+                                    <span>Invited by: {{ invitation.invited_by.get_full_name|default:invitation.invited_by.username }}</span>
+                                </div>
+                            </div>
+                            
+                            {% if invitation.message %}
+                                <div class="bg-gray-50 rounded-lg p-3 mb-4">
+                                    <p class="text-sm text-gray-700">
+                                        <strong>Message:</strong> {{ invitation.message }}
+                                    </p>
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="ml-6 flex flex-col items-end space-y-2">
+                            <!-- Time Indicators -->
+                            {% if invitation.event.start_time > today %}
+                                <div class="text-xs text-green-600">
+                                    <i class="fas fa-hourglass-start mr-1"></i>
+                                    {{ invitation.event.start_time|timeuntil }} from now
+                                </div>
+                            {% elif invitation.event.start_time < today %}
+                                <div class="text-xs text-gray-500">
+                                    <i class="fas fa-history mr-1"></i>
+                                    {{ invitation.event.start_time|timesince }} ago
+                                </div>
+                            {% else %}
+                                <div class="text-xs text-blue-600">
+                                    <i class="fas fa-play mr-1"></i>
+                                    Today
+                                </div>
+                            {% endif %}
+                            
+                            <div class="text-xs text-gray-500">
+                                Invited {{ invitation.created_at|timesince }} ago
+                            </div>
+                            
+                            <!-- Actions -->
+                            <div class="flex flex-col space-y-2 mt-4">
+                                <a href="{% url 'core:event_detail' invitation.event.id %}" 
+                                   class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-xs font-medium text-center">
+                                    View Event
+                                </a>
+                                
+                                {% if invitation.status == 'pending' %}
+                                    <div class="flex space-x-2">
+                                        <button onclick="respondToInvitation({{ invitation.id }}, 'accepted')"
+                                                class="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-md text-xs font-medium">
+                                            Accept
+                                        </button>
+                                        <button onclick="respondToInvitation({{ invitation.id }}, 'declined')"
+                                                class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded-md text-xs font-medium">
+                                            Decline
+                                        </button>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <div class="bg-white rounded-lg shadow-md p-12 text-center">
+                <i class="fas fa-envelope-open text-6xl text-gray-300 mb-4"></i>
+                <h3 class="text-lg font-medium text-gray-900 mb-2">No Invitations</h3>
+                <p class="text-gray-600 mb-6">You haven't received any event invitations yet.</p>
+                <a href="{% url 'core:event_list' %}" 
+                   class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium">
+                    Browse Events
+                </a>
+            </div>
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+// Filter and Sort Functions
+function filterInvitations() {
+    const statusFilter = document.getElementById('status-filter').value;
+    const invitations = document.querySelectorAll('.invitation-item');
+    
+    invitations.forEach(item => {
+        let show = true;
+        
+        // Status filter
+        if (statusFilter !== 'all') {
+            show = show && (item.dataset.status === statusFilter);
+        }
+        
+        item.style.display = show ? 'block' : 'none';
+    });
+    
+    updateStatistics();
+}
+
+function sortInvitations() {
+    const sortBy = document.getElementById('sort-option').value;
+    const container = document.getElementById('invitations-container');
+    const items = Array.from(container.children);
+    
+    items.sort((a, b) => {
+        let aValue, bValue;
+        
+        switch(sortBy) {
+            case 'event_date':
+                aValue = new Date(a.dataset.eventDate);
+                bValue = new Date(b.dataset.eventDate);
+                break;
+            case 'status':
+                aValue = a.dataset.status;
+                bValue = b.dataset.status;
+                break;
+            case 'created_at':
+            default:
+                aValue = new Date(a.dataset.created);
+                bValue = new Date(b.dataset.created);
+                return bValue - aValue; // Newest first
+        }
+        
+        return aValue > bValue ? 1 : -1;
+    });
+    
+    items.forEach(item => container.appendChild(item));
+}
+
+// Update statistics based on filtered results
+function updateStatistics() {
+    const visibleInvitations = document.querySelectorAll('.invitation-item[style="display: block"], .invitation-item:not([style*="display: none"])');
+    let accepted = 0, declined = 0, pending = 0;
+    
+    visibleInvitations.forEach(item => {
+        const status = item.dataset.status;
+        if (status === 'accepted') accepted++;
+        else if (status === 'declined') declined++;
+        else if (status === 'pending') pending++;
+    });
+    
+    document.getElementById('accepted-count').textContent = accepted;
+    document.getElementById('declined-count').textContent = declined;
+    
+    // Update pending count in the DOM if it exists
+    const pendingCountEl = document.querySelector('[data-stat="pending"]');
+    if (pendingCountEl) {
+        pendingCountEl.textContent = pending;
+    }
+}
+
+// Respond to invitation
+function respondToInvitation(invitationId, response) {
+    if (!confirm(`Are you sure you want to ${response} this invitation?`)) {
+        return;
+    }
+    
+    fetch(`/core/invitations/${invitationId}/respond/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value
+        },
+        body: `response=${response}`
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Show success message
+            const message = document.createElement('div');
+            message.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-md z-50';
+            message.textContent = `Invitation ${response} successfully!`;
+            document.body.appendChild(message);
+            
+            setTimeout(() => {
+                message.remove();
+            }, 3000);
+            
+            // Reload page to reflect changes
+            setTimeout(() => {
+                location.reload();
+            }, 1000);
+        } else {
+            alert('Error responding to invitation: ' + data.error);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error responding to invitation');
+    });
+}
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    updateStatistics();
+    
+    // Add CSRF token for AJAX requests
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]');
+    if (!csrfToken) {
+        const token = document.createElement('input');
+        token.type = 'hidden';
+        token.name = 'csrfmiddlewaretoken';
+        token.value = '{{ csrf_token }}';
+        document.body.appendChild(token);
+    }
+});
+</script>
+{% endblock %}

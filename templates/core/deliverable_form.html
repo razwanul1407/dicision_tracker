@@ -1,0 +1,371 @@
+{% extends "base.html" %}
+
+{% block page_title %}{% if form.instance.pk %}Edit Deliverable{% else %}New Deliverable{% endif %}{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="bg-white shadow rounded-lg">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h2 class="text-xl font-semibold text-gray-900">
+                {% if form.instance.pk %}Edit Deliverable{% else %}{{ title }}{% endif %}
+            </h2>
+            {% if event %}
+                <div class="mt-2 flex items-center text-sm text-gray-600">
+                    <i class="fas fa-calendar mr-2"></i>
+                    <span>Creating deliverable in context of: <strong>{{ event.title }}</strong></span>
+                </div>
+                <div class="mt-1 text-xs text-gray-500">
+                    You can optionally link this deliverable to a decision from this event, or leave it as a standalone task.
+                </div>
+            {% endif %}
+        </div>
+        
+        <form method="post" class="space-y-6 p-6">
+            {% csrf_token %}
+            
+            {% if form.non_field_errors %}
+                <div class="bg-red-50 border border-red-200 rounded-md p-4">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-exclamation-circle text-red-400"></i>
+                        </div>
+                        <div class="ml-3">
+                            <h3 class="text-sm font-medium text-red-800">
+                                Please correct the following errors:
+                            </h3>
+                            <div class="mt-2 text-sm text-red-700">
+                                {{ form.non_field_errors }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Title -->
+                <div class="md:col-span-2">
+                    <label for="{{ form.title.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                        Deliverable Title *
+                    </label>
+                    <div class="mt-1">
+                        {{ form.title }}
+                        {% if form.title.errors %}
+                            <p class="mt-2 text-sm text-red-600">{{ form.title.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Decision -->
+                <div>
+                    <label for="{{ form.decision.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                        Related Decision *
+                    </label>
+                    <div class="mt-1">
+                        {{ form.decision }}
+                        {% if form.decision.errors %}
+                            <p class="mt-2 text-sm text-red-600">{{ form.decision.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Assigned To -->
+                <div>
+                    <label for="{{ form.assigned_to.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                        Assigned To
+                    </label>
+                    <div class="mt-1">
+                        {{ form.assigned_to }}
+                        {% if form.assigned_to.errors %}
+                            <p class="mt-2 text-sm text-red-600">{{ form.assigned_to.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Due Date -->
+                <div>
+                    <label for="{{ form.due_date.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                        Due Date *
+                    </label>
+                    <div class="mt-1">
+                        {{ form.due_date }}
+                        {% if form.due_date.errors %}
+                            <p class="mt-2 text-sm text-red-600">{{ form.due_date.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Status -->
+                <div>
+                    <label for="{{ form.status.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                        Status *
+                    </label>
+                    <div class="mt-1">
+                        {{ form.status }}
+                        {% if form.status.errors %}
+                            <p class="mt-2 text-sm text-red-600">{{ form.status.errors.0 }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Description -->
+            <div>
+                <label for="{{ form.description.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                    Description *
+                </label>
+                <div class="mt-1">
+                    {{ form.description }}
+                    {% if form.description.errors %}
+                        <p class="mt-2 text-sm text-red-600">{{ form.description.errors.0 }}</p>
+                    {% endif %}
+                    <p class="mt-2 text-sm text-gray-500">
+                        Provide a detailed description of what needs to be delivered.
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Progress -->
+            <div>
+                <label for="{{ form.progress.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                    Progress (%)
+                </label>
+                <div class="mt-1">
+                    <div class="flex items-center space-x-4">
+                        {{ form.progress }}
+                        <div class="flex-1">
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div id="progressBar" class="bg-indigo-600 h-2 rounded-full transition-all duration-300" style="width: {% if form.progress.value %}{{ form.progress.value }}{% else %}0{% endif %}%"></div>
+                            </div>
+                        </div>
+                        <span id="progressText" class="text-sm text-gray-600">{% if form.progress.value %}{{ form.progress.value }}{% else %}0{% endif %}%</span>
+                    </div>
+                    {% if form.progress.errors %}
+                        <p class="mt-2 text-sm text-red-600">{{ form.progress.errors.0 }}</p>
+                    {% endif %}
+                    <p class="mt-2 text-sm text-gray-500">
+                        Track completion progress from 0 to 100%.
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Notes -->
+            <div>
+                <label for="{{ form.notes.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                    Notes
+                </label>
+                <div class="mt-1">
+                    {{ form.notes }}
+                    {% if form.notes.errors %}
+                        <p class="mt-2 text-sm text-red-600">{{ form.notes.errors.0 }}</p>
+                    {% endif %}
+                    <p class="mt-2 text-sm text-gray-500">
+                        Additional notes, updates, or comments about this deliverable.
+                    </p>
+                </div>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="flex justify-end space-x-3 pt-6 border-t border-gray-200">
+                <a href="{% if form.instance.pk %}{% url 'core:deliverable_detail' form.instance.pk %}{% else %}{% url 'core:deliverable_list' %}{% endif %}" 
+                   class="btn-outline">
+                    Cancel
+                </a>
+                <button type="submit" class="btn-primary">
+                    <i class="fas fa-save mr-2"></i>
+                    {% if form.instance.pk %}Update Deliverable{% else %}Create Deliverable{% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+    
+    <!-- Context Information -->
+    {% if form.instance.decision %}
+        <div class="bg-white shadow rounded-lg mt-6">
+            <div class="px-6 py-4 border-b border-gray-200">
+                <h3 class="text-lg font-medium text-gray-900">Related Decision</h3>
+            </div>
+            <div class="px-6 py-4">
+                <div class="flex items-start space-x-4">
+                    <div class="flex-shrink-0">
+                        <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                            <i class="fas fa-gavel text-purple-600"></i>
+                        </div>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <h4 class="text-sm font-medium text-gray-900">
+                            <a href="{% url 'core:decision_detail' form.instance.decision.pk %}" class="text-indigo-600 hover:text-indigo-800">
+                                {{ form.instance.decision.title }}
+                            </a>
+                        </h4>
+                        <p class="text-sm text-gray-500 mt-1">{{ form.instance.decision.description|truncatewords:20 }}</p>
+                        <div class="mt-2 flex items-center text-xs text-gray-400">
+                            <span>Event: {{ form.instance.decision.event.title }}</span>
+                            <span class="mx-2">•</span>
+                            <span>{{ form.instance.decision.created_at|date:"M d, Y" }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+    
+    <!-- Quick Status Templates -->
+    <div class="bg-gray-50 rounded-lg p-6 mt-6">
+        <h3 class="text-lg font-medium text-gray-900 mb-4">Quick Actions</h3>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <button type="button" onclick="setStatus('pending', 0)" class="btn-outline text-left">
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center mr-3">
+                        <i class="fas fa-clock text-gray-600"></i>
+                    </div>
+                    <div>
+                        <div class="text-sm font-medium">Mark as Pending</div>
+                        <div class="text-xs text-gray-500">Reset to not started</div>
+                    </div>
+                </div>
+            </button>
+            
+            <button type="button" onclick="setStatus('in_progress', 50)" class="btn-outline text-left">
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center mr-3">
+                        <i class="fas fa-spinner text-yellow-600"></i>
+                    </div>
+                    <div>
+                        <div class="text-sm font-medium">Start Working</div>
+                        <div class="text-xs text-gray-500">Mark as in progress</div>
+                    </div>
+                </div>
+            </button>
+            
+            <button type="button" onclick="setStatus('completed', 100)" class="btn-outline text-left">
+                <div class="flex items-center">
+                    <div class="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3">
+                        <i class="fas fa-check text-green-600"></i>
+                    </div>
+                    <div>
+                        <div class="text-sm font-medium">Mark Complete</div>
+                        <div class="text-xs text-gray-500">100% finished</div>
+                    </div>
+                </div>
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const progressInput = document.getElementById('{{ form.progress.id_for_label }}');
+    const progressBar = document.getElementById('progressBar');
+    const progressText = document.getElementById('progressText');
+    const statusSelect = document.getElementById('{{ form.status.id_for_label }}');
+    
+    // Update progress bar when input changes
+    if (progressInput) {
+        progressInput.addEventListener('input', function() {
+            const value = this.value || 0;
+            progressBar.style.width = value + '%';
+            progressText.textContent = value + '%';
+            
+            // Auto-update status based on progress
+            if (value == 0) {
+                statusSelect.value = 'pending';
+            } else if (value == 100) {
+                statusSelect.value = 'completed';
+            } else {
+                statusSelect.value = 'in_progress';
+            }
+        });
+    }
+    
+    // Auto-suggest due date based on decision's next review date
+    const dueDateInput = document.getElementById('{{ form.due_date.id_for_label }}');
+    if (dueDateInput && !dueDateInput.value) {
+        // Suggest due date 2 weeks from now
+        const suggestedDate = new Date();
+        suggestedDate.setDate(suggestedDate.getDate() + 14);
+        
+        // Format for date input
+        const year = suggestedDate.getFullYear();
+        const month = String(suggestedDate.getMonth() + 1).padStart(2, '0');
+        const day = String(suggestedDate.getDate()).padStart(2, '0');
+        
+        // Add helper text
+        const helpText = document.createElement('p');
+        helpText.className = 'mt-1 text-sm text-indigo-600';
+        helpText.innerHTML = `<i class="fas fa-lightbulb mr-1"></i>Suggestion: ${suggestedDate.toLocaleDateString()}`;
+        helpText.style.cursor = 'pointer';
+        
+        helpText.addEventListener('click', function() {
+            dueDateInput.value = `${year}-${month}-${day}`;
+            this.remove();
+        });
+        
+        dueDateInput.parentNode.appendChild(helpText);
+    }
+    
+    // Decision selection with context
+    const decisionSelect = document.getElementById('{{ form.decision.id_for_label }}');
+    if (decisionSelect) {
+        decisionSelect.addEventListener('change', function() {
+            // You could fetch decision details via AJAX here
+            // For now, just show that it changed
+            if (this.value) {
+                const option = this.options[this.selectedIndex];
+                console.log('Selected decision:', option.text);
+            }
+        });
+    }
+});
+
+// Quick status functions
+function setStatus(status, progress) {
+    const statusSelect = document.getElementById('{{ form.status.id_for_label }}');
+    const progressInput = document.getElementById('{{ form.progress.id_for_label }}');
+    const progressBar = document.getElementById('progressBar');
+    const progressText = document.getElementById('progressText');
+    
+    statusSelect.value = status;
+    progressInput.value = progress;
+    progressBar.style.width = progress + '%';
+    progressText.textContent = progress + '%';
+}
+
+// Form validation
+function validateForm() {
+    const dueDateInput = document.getElementById('{{ form.due_date.id_for_label }}');
+    const progressInput = document.getElementById('{{ form.progress.id_for_label }}');
+    
+    // Check if due date is in the past
+    if (dueDateInput.value) {
+        const dueDate = new Date(dueDateInput.value);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        if (dueDate < today) {
+            const proceed = confirm('The due date is in the past. Are you sure you want to continue?');
+            if (!proceed) {
+                return false;
+            }
+        }
+    }
+    
+    // Validate progress range
+    const progress = parseInt(progressInput.value);
+    if (progress < 0 || progress > 100) {
+        alert('Progress must be between 0 and 100%');
+        return false;
+    }
+    
+    return true;
+}
+
+// Add validation to form submit
+document.querySelector('form').addEventListener('submit', function(e) {
+    if (!validateForm()) {
+        e.preventDefault();
+    }
+});
+</script>
+{% endblock %}

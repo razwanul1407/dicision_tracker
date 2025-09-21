@@ -1,0 +1,244 @@
+{% extends 'project_user_base.html' %}
+{% load static %}
+
+{% block title %}My Decisions{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <!-- Header -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900">My Decisions</h1>
+                <p class="text-gray-600 mt-2">Decisions from projects you're involved in</p>
+            </div>
+            <div class="text-sm text-gray-600">
+                {{ decisions|length }} decision{{ decisions|length|pluralize }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Tabs -->
+    <div class="bg-white rounded-lg shadow-md mb-6">
+        <div class="border-b border-gray-200">
+            <nav class="-mb-px flex">
+                <a href="?status=all" 
+                   class="w-1/4 py-4 px-1 text-center border-b-2 {% if not status_filter or status_filter == 'all' %}border-blue-500 text-blue-600{% else %}border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300{% endif %} font-medium text-sm">
+                    All Decisions
+                </a>
+                <a href="?status=pending" 
+                   class="w-1/4 py-4 px-1 text-center border-b-2 {% if status_filter == 'pending' %}border-blue-500 text-blue-600{% else %}border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300{% endif %} font-medium text-sm">
+                    Pending
+                </a>
+                <a href="?status=approved" 
+                   class="w-1/4 py-4 px-1 text-center border-b-2 {% if status_filter == 'approved' %}border-blue-500 text-blue-600{% else %}border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300{% endif %} font-medium text-sm">
+                    Approved
+                </a>
+                <a href="?status=rejected" 
+                   class="w-1/4 py-4 px-1 text-center border-b-2 {% if status_filter == 'rejected' %}border-blue-500 text-blue-600{% else %}border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300{% endif %} font-medium text-sm">
+                    Rejected
+                </a>
+            </nav>
+        </div>
+    </div>
+
+    <!-- Decisions List -->
+    <div class="space-y-4">
+        {% for decision in decisions %}
+            <div class="bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow duration-200">
+                <div class="p-6">
+                    <div class="flex items-start justify-between">
+                        <div class="flex-1">
+                            <div class="flex items-center space-x-3 mb-3">
+                                <h3 class="text-lg font-semibold text-gray-900">
+                                    <a href="{% url 'core:decision_detail' decision.id %}" class="hover:text-blue-600">
+                                        {{ decision.title }}
+                                    </a>
+                                </h3>
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                    {% if decision.status == 'approved' %}
+                                        bg-green-100 text-green-800
+                                    {% elif decision.status == 'rejected' %}
+                                        bg-red-100 text-red-800
+                                    {% elif decision.status == 'pending' %}
+                                        bg-yellow-100 text-yellow-800
+                                    {% else %}
+                                        bg-gray-100 text-gray-800
+                                    {% endif %}">
+                                    {{ decision.get_status_display }}
+                                </span>
+                            </div>
+                            
+                            <p class="text-gray-600 mb-4">{{ decision.description|truncatechars:200 }}</p>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600 mb-4">
+                                <div class="flex items-center">
+                                    <i class="fas fa-folder mr-2"></i>
+                                    <span>
+                                        {% if decision.project %}
+                                            <a href="{% url 'core:project_detail' decision.project.id %}" class="hover:text-blue-600">
+                                                {{ decision.project.name }}
+                                            </a>
+                                        {% else %}
+                                            General Decision
+                                        {% endif %}
+                                    </span>
+                                </div>
+                                <div class="flex items-center">
+                                    <i class="fas fa-user mr-2"></i>
+                                    <span>Proposed by: {{ decision.proposed_by.get_full_name|default:decision.proposed_by.username }}</span>
+                                </div>
+                                <div class="flex items-center">
+                                    <i class="fas fa-calendar mr-2"></i>
+                                    <span>{{ decision.created_at|date:"M d, Y g:i A" }}</span>
+                                </div>
+                                {% if decision.deadline %}
+                                    <div class="flex items-center">
+                                        <i class="fas fa-clock mr-2"></i>
+                                        <span>Deadline: {{ decision.deadline|date:"M d, Y" }}</span>
+                                        {% if decision.deadline < today and decision.status == 'pending' %}
+                                            <span class="ml-2 text-red-600 font-medium">(Overdue)</span>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            {% if decision.decision_maker and decision.decided_at %}
+                                <div class="bg-gray-50 rounded-lg p-3 mb-4">
+                                    <div class="flex items-center justify-between text-sm">
+                                        <span class="text-gray-600">
+                                            Decision made by: 
+                                            <span class="font-medium">{{ decision.decision_maker.get_full_name|default:decision.decision_maker.username }}</span>
+                                        </span>
+                                        <span class="text-gray-500">{{ decision.decided_at|date:"M d, Y g:i A" }}</span>
+                                    </div>
+                                    {% if decision.rationale %}
+                                        <p class="text-gray-700 mt-2">{{ decision.rationale }}</p>
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+                            
+                            <!-- Impact and Options -->
+                            {% if decision.impact or decision.options %}
+                                <div class="space-y-3">
+                                    {% if decision.impact %}
+                                        <div>
+                                            <h4 class="text-sm font-medium text-gray-900 mb-1">Impact:</h4>
+                                            <p class="text-sm text-gray-600">{{ decision.impact }}</p>
+                                        </div>
+                                    {% endif %}
+                                    {% if decision.options %}
+                                        <div>
+                                            <h4 class="text-sm font-medium text-gray-900 mb-1">Options Considered:</h4>
+                                            <p class="text-sm text-gray-600">{{ decision.options }}</p>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="ml-6 flex flex-col items-end space-y-2">
+                            <!-- Priority Indicator -->
+                            {% if decision.priority %}
+                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                    {% if decision.priority == 'high' %}
+                                        bg-red-100 text-red-800
+                                    {% elif decision.priority == 'medium' %}
+                                        bg-yellow-100 text-yellow-800
+                                    {% else %}
+                                        bg-green-100 text-green-800
+                                    {% endif %}">
+                                    {{ decision.get_priority_display }} Priority
+                                </span>
+                            {% endif %}
+                            
+                            <!-- Actions -->
+                            <div class="flex space-x-2">
+                                <a href="{% url 'core:decision_detail' decision.id %}" 
+                                   class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-xs font-medium">
+                                    View Details
+                                </a>
+                            </div>
+                            
+                            <!-- Time indicators -->
+                            {% if decision.status == 'pending' %}
+                                {% if decision.deadline %}
+                                    {% with decision.deadline|timeuntil as time_left %}
+                                        {% if decision.deadline > today %}
+                                            <div class="text-xs text-gray-500 text-right">
+                                                <i class="fas fa-hourglass-half mr-1"></i>
+                                                {{ time_left }} left
+                                            </div>
+                                        {% else %}
+                                            <div class="text-xs text-red-600 text-right font-medium">
+                                                <i class="fas fa-exclamation-triangle mr-1"></i>
+                                                Overdue
+                                            </div>
+                                        {% endif %}
+                                    {% endwith %}
+                                {% endif %}
+                            {% else %}
+                                <div class="text-xs text-gray-500 text-right">
+                                    <i class="fas fa-check-circle mr-1"></i>
+                                    Decided {{ decision.decided_at|timesince }} ago
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% empty %}
+            <div class="bg-white rounded-lg shadow-md p-12 text-center">
+                <i class="fas fa-gavel text-6xl text-gray-300 mb-4"></i>
+                <h3 class="text-lg font-medium text-gray-900 mb-2">No Decisions Found</h3>
+                <p class="text-gray-600 mb-6">
+                    {% if status_filter == 'pending' %}
+                        There are no pending decisions in your projects.
+                    {% elif status_filter == 'approved' %}
+                        There are no approved decisions in your projects.
+                    {% elif status_filter == 'rejected' %}
+                        There are no rejected decisions in your projects.
+                    {% else %}
+                        There are no decisions in your projects yet.
+                    {% endif %}
+                </p>
+                <a href="{% url 'core:my_projects' %}" 
+                   class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium">
+                    View My Projects
+                </a>
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- Decision Summary -->
+    {% if decisions %}
+        <div class="mt-6 bg-white rounded-lg shadow-md p-6">
+            <h2 class="text-lg font-semibold text-gray-900 mb-4">Decision Summary</h2>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-blue-600">{{ decisions|length }}</div>
+                    <div class="text-sm text-gray-600">Total Decisions</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-yellow-600">
+                        {{ decisions.filter:status="pending".count }}
+                    </div>
+                    <div class="text-sm text-gray-600">Pending</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-green-600">
+                        {{ decisions.filter:status="approved".count }}
+                    </div>
+                    <div class="text-sm text-gray-600">Approved</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-red-600">
+                        {{ decisions.filter:status="rejected".count }}
+                    </div>
+                    <div class="text-sm text-gray-600">Rejected</div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

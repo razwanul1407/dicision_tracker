@@ -1,0 +1,212 @@
+{% extends "admin_base.html" %}
+
+{% block page_title %}Update User Role{% endblock %}
+
+{% block header_actions %}
+<a href="{% url 'accounts:user_management' %}" class="btn-secondary">
+    <i class="fas fa-arrow-left mr-2"></i>Back to Users
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <div class="bg-white shadow rounded-lg">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <div class="flex items-center">
+                <div class="flex-shrink-0 h-12 w-12">
+                    <div class="h-12 w-12 rounded-full bg-gray-300 flex items-center justify-center">
+                        <span class="text-lg font-medium text-gray-700">
+                            {{ object.first_name|first|upper }}{{ object.last_name|first|upper }}
+                        </span>
+                    </div>
+                </div>
+                <div class="ml-4">
+                    <h3 class="text-lg font-medium text-gray-900">{{ object.get_full_name|default:object.username }}</h3>
+                    <p class="text-sm text-gray-600">{{ object.email }}</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="px-6 py-4">
+            <h4 class="text-md font-medium text-gray-900 mb-4">Update User Role</h4>
+            
+            <form method="post" class="space-y-6">
+                {% csrf_token %}
+                
+                {% if form.non_field_errors %}
+                    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                        {{ form.non_field_errors }}
+                    </div>
+                {% endif %}
+                
+                <!-- Current Role Display -->
+                <div class="bg-gray-50 border border-gray-200 rounded-md p-4">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <h5 class="text-sm font-medium text-gray-900">Current Role</h5>
+                            <p class="text-sm text-gray-600">{{ object.get_role_display }}</p>
+                        </div>
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium
+                            {% if object.role == 'admin' %}bg-red-100 text-red-800
+                            {% elif object.role == 'management' %}bg-blue-100 text-blue-800
+                            {% else %}bg-green-100 text-green-800{% endif %}">
+                            {{ object.get_role_display }}
+                        </span>
+                    </div>
+                </div>
+                
+                <!-- New Role Selection -->
+                <div>
+                    <label for="{{ form.role.id_for_label }}" class="block text-sm font-medium text-gray-700">
+                        New Role <span class="text-red-500">*</span>
+                    </label>
+                    {{ form.role }}
+                    {% if form.role.errors %}
+                        <p class="mt-1 text-sm text-red-600">{{ form.role.errors.0 }}</p>
+                    {% endif %}
+                </div>
+                
+                <!-- Role Descriptions -->
+                <div class="bg-blue-50 border border-blue-200 rounded-md p-4">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-info-circle text-blue-400"></i>
+                        </div>
+                        <div class="ml-3">
+                            <h3 class="text-sm font-medium text-blue-800">Role Permissions</h3>
+                            <div class="mt-2 text-sm text-blue-700 space-y-2">
+                                <div>
+                                    <strong>Admin:</strong>
+                                    <ul class="list-disc pl-5 mt-1">
+                                        <li>Full system access and control</li>
+                                        <li>User management and role assignment</li>
+                                        <li>View and manage all projects and events</li>
+                                        <li>System-wide analytics and reports</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <strong>Management User:</strong>
+                                    <ul class="list-disc pl-5 mt-1">
+                                        <li>Create and manage projects</li>
+                                        <li>Schedule events and invite participants</li>
+                                        <li>Make decisions and assign deliverables</li>
+                                        <li>Monitor team progress and performance</li>
+                                    </ul>
+                                </div>
+                                <div>
+                                    <strong>Project User:</strong>
+                                    <ul class="list-disc pl-5 mt-1">
+                                        <li>Participate in assigned projects</li>
+                                        <li>Update progress on deliverables</li>
+                                        <li>Create events within projects they participate in</li>
+                                        <li>View personal dashboard and tasks</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Warning for Role Changes -->
+                {% if object.role == 'admin' %}
+                <div class="bg-yellow-50 border border-yellow-200 rounded-md p-4">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <i class="fas fa-exclamation-triangle text-yellow-400"></i>
+                        </div>
+                        <div class="ml-3">
+                            <h3 class="text-sm font-medium text-yellow-800">Warning</h3>
+                            <div class="mt-2 text-sm text-yellow-700">
+                                <p>You are changing the role of an Admin user. This will remove their administrative privileges. 
+                                Make sure you have other admin users or you might lose access to user management.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- User Activity Summary -->
+                <div class="border border-gray-200 rounded-md p-4">
+                    <h5 class="text-sm font-medium text-gray-900 mb-3">User Activity Summary</h5>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                        <div class="text-center">
+                            <div class="text-lg font-semibold text-gray-900">{{ object.created_projects.count }}</div>
+                            <div class="text-gray-600">Projects Created</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-lg font-semibold text-gray-900">{{ object.organized_events.count }}</div>
+                            <div class="text-gray-600">Events Organized</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-lg font-semibold text-gray-900">{{ object.assigned_deliverables.count }}</div>
+                            <div class="text-gray-600">Tasks Assigned</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-lg font-semibold text-gray-900">
+                                {{ object.assigned_deliverables.filter.status='completed'.count }}
+                            </div>
+                            <div class="text-gray-600">Tasks Completed</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Actions -->
+                <div class="flex items-center justify-end space-x-4 pt-6 border-t border-gray-200">
+                    <a href="{% url 'accounts:user_management' %}" class="btn-secondary">Cancel</a>
+                    <button type="submit" class="btn-primary">
+                        <i class="fas fa-save mr-2"></i>Update Role
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <!-- Recent Activity -->
+    <div class="mt-6 bg-white shadow rounded-lg">
+        <div class="px-6 py-4 border-b border-gray-200">
+            <h3 class="text-lg font-medium text-gray-900">Recent Activity</h3>
+        </div>
+        <div class="px-6 py-4">
+            <div class="space-y-4">
+                <!-- Recent Projects -->
+                {% if object.created_projects.exists %}
+                <div>
+                    <h4 class="text-sm font-medium text-gray-900 mb-2">Recent Projects Created</h4>
+                    <div class="space-y-2">
+                        {% for project in object.created_projects.all|slice:":3" %}
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="text-gray-900">{{ project.name }}</span>
+                            <span class="text-gray-500">{{ project.created_at|date:"M d, Y" }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Recent Deliverables -->
+                {% if object.assigned_deliverables.exists %}
+                <div>
+                    <h4 class="text-sm font-medium text-gray-900 mb-2">Recent Tasks</h4>
+                    <div class="space-y-2">
+                        {% for deliverable in object.assigned_deliverables.all|slice:":3" %}
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="text-gray-900">{{ deliverable.title }}</span>
+                            <div class="flex items-center space-x-2">
+                                <span class="text-gray-500">{{ deliverable.progress }}%</span>
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
+                                    {% if deliverable.status == 'completed' %}bg-green-100 text-green-800
+                                    {% elif deliverable.status == 'in-progress' %}bg-yellow-100 text-yellow-800
+                                    {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                    {{ deliverable.get_status_display }}
+                                </span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

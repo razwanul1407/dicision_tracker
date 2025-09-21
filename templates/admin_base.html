@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+
+{% block sidebar %}
+    <!-- Admin Sidebar -->
+    <a href="{% url 'dashboard:admin_dashboard' %}" class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 sidebar-nav">
+        <i class="fas fa-tachometer-alt mr-3"></i>
+        Admin Dashboard
+    </a>
+    
+    <a href="{% url 'accounts:user_management' %}" class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 sidebar-nav">
+        <i class="fas fa-users mr-3"></i>
+        Users Management
+    </a>
+    
+    <a href="{% url 'core:project_list' %}" class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 sidebar-nav">
+        <i class="fas fa-folder mr-3"></i>
+        All Projects
+    </a>
+    
+    <a href="{% url 'core:event_list' %}" class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 sidebar-nav">
+        <i class="fas fa-calendar mr-3"></i>
+        All Events
+    </a>
+    
+    <a href="{% url 'core:decision_list' %}" class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 sidebar-nav">
+        <i class="fas fa-gavel mr-3"></i>
+        All Decisions
+    </a>
+    
+    <a href="{% url 'core:deliverable_list' %}" class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 sidebar-nav">
+        <i class="fas fa-tasks mr-3"></i>
+        All Deliverables
+    </a>
+    
+    <a href="{% url 'dashboard:calendar' %}" class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 sidebar-nav">
+        <i class="fas fa-calendar-alt mr-3"></i>
+        Calendar
+    </a>
+    
+    <a href="{% url 'dashboard:reports' %}" class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 sidebar-nav">
+        <i class="fas fa-chart-bar mr-3"></i>
+        Reports & Analytics
+    </a>
+    
+    <a href="{% url 'accounts:system_settings' %}" class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 sidebar-nav">
+        <i class="fas fa-cog mr-3"></i>
+        System Settings
+    </a>
+    
+    <a href="/admin/" target="_blank" class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 sidebar-nav">
+        <i class="fas fa-tools mr-3"></i>
+        Django Admin
+    </a>
+{% endblock %}

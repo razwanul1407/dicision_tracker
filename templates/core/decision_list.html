@@ -1,0 +1,312 @@
+{% extends "base.html" %}
+
+{% block page_title %}Decisions{% endblock %}
+
+{% block header_actions %}
+    {% if user.is_admin or user.is_management %}
+        <a href="{% url 'core:decision_create' %}" class="btn-primary">
+            <i class="fas fa-plus mr-2"></i>New Decision
+        </a>
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<!-- Filter Bar -->
+<div class="bg-white shadow rounded-lg mb-6">
+    <div class="px-6 py-4">
+        <form method="get" class="flex flex-wrap items-center gap-4">
+            <div class="flex-1 min-w-64">
+                <input type="text" name="search" value="{{ request.GET.search }}" 
+                       placeholder="Search decisions..." 
+                       class="form-input w-full">
+            </div>
+            
+            {% if user.is_admin %}
+                <div class="min-w-48">
+                    <select name="project" class="form-select w-full">
+                        <option value="">All Projects</option>
+                        {% for project in projects %}
+                            <option value="{{ project.pk }}" {% if request.GET.project == project.pk|stringformat:"s" %}selected{% endif %}>
+                                {{ project.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            {% endif %}
+            
+            <div class="min-w-48">
+                <select name="event" class="form-select w-full">
+                    <option value="">All Events</option>
+                    {% for event in events %}
+                        <option value="{{ event.pk }}" {% if request.GET.event == event.pk|stringformat:"s" %}selected{% endif %}>
+                            {{ event.title }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="min-w-32">
+                <select name="created_by" class="form-select w-full">
+                    <option value="">All Authors</option>
+                    {% for user_option in decision_authors %}
+                        <option value="{{ user_option.pk }}" {% if request.GET.created_by == user_option.pk|stringformat:"s" %}selected{% endif %}>
+                            {{ user_option.get_full_name }}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <button type="submit" class="btn-secondary">
+                <i class="fas fa-search mr-2"></i>Filter
+            </button>
+            
+            {% if request.GET %}
+                <a href="{% url 'core:decision_list' %}" class="btn-outline">
+                    <i class="fas fa-times mr-2"></i>Clear
+                </a>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="p-5">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-gavel text-purple-600 text-2xl"></i>
+                </div>
+                <div class="ml-5 w-0 flex-1">
+                    <dl>
+                        <dt class="text-sm font-medium text-gray-500 truncate">Total Decisions</dt>
+                        <dd class="text-lg font-medium text-gray-900">{{ decisions.count }}</dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="p-5">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-tasks text-blue-600 text-2xl"></i>
+                </div>
+                <div class="ml-5 w-0 flex-1">
+                    <dl>
+                        <dt class="text-sm font-medium text-gray-500 truncate">With Deliverables</dt>
+                        <dd class="text-lg font-medium text-gray-900">
+                            {{ decisions_with_deliverables }}
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="p-5">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-calendar text-green-600 text-2xl"></i>
+                </div>
+                <div class="ml-5 w-0 flex-1">
+                    <dl>
+                        <dt class="text-sm font-medium text-gray-500 truncate">This Month</dt>
+                        <dd class="text-lg font-medium text-gray-900">
+                            {{ decisions_this_month }}
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="bg-white overflow-hidden shadow rounded-lg">
+        <div class="p-5">
+            <div class="flex items-center">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-users text-yellow-600 text-2xl"></i>
+                </div>
+                <div class="ml-5 w-0 flex-1">
+                    <dl>
+                        <dt class="text-sm font-medium text-gray-500 truncate">Contributors</dt>
+                        <dd class="text-lg font-medium text-gray-900">
+                            {{ decision_authors.count }}
+                        </dd>
+                    </dl>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Decisions List -->
+<div class="bg-white shadow overflow-hidden sm:rounded-md">
+    <ul class="divide-y divide-gray-200">
+        {% for decision in decisions %}
+            <li>
+                <div class="px-4 py-4 sm:px-6 hover:bg-gray-50">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-start space-x-4">
+                            <div class="flex-shrink-0">
+                                <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                                    <i class="fas fa-gavel text-purple-600"></i>
+                                </div>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center">
+                                    <p class="text-sm font-medium text-indigo-600 truncate">
+                                        <a href="{% url 'core:decision_detail' decision.pk %}">{{ decision.title }}</a>
+                                    </p>
+                                </div>
+                                <div class="mt-2 flex items-center text-sm text-gray-500">
+                                    <i class="fas fa-calendar mr-1"></i>
+                                    <p>{{ decision.event.title }}</p>
+                                    <span class="mx-2">•</span>
+                                    <p>{{ decision.created_at|date:"M d, Y H:i" }}</p>
+                                    {% if decision.event.project %}
+                                        <span class="mx-2">•</span>
+                                        <p>{{ decision.event.project.name }}</p>
+                                    {% endif %}
+                                </div>
+                                {% if decision.description %}
+                                    <p class="mt-2 text-sm text-gray-600">
+                                        {{ decision.description|truncatewords:25 }}
+                                    </p>
+                                {% endif %}
+                                <div class="mt-2 flex items-center text-xs text-gray-400">
+                                    <span>by {{ decision.created_by.get_full_name }}</span>
+                                    {% if decision.deliverables.exists %}
+                                        <span class="mx-2">•</span>
+                                        <span>{{ decision.deliverables.count }} deliverable{{ decision.deliverables.count|pluralize }}</span>
+                                    {% endif %}
+                                    {% if decision.next_review_date %}
+                                        <span class="mx-2">•</span>
+                                        <span>Next review: {{ decision.next_review_date|date:"M d, Y" }}</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-4">
+                            {% if decision.deliverables.exists %}
+                                <div class="flex flex-col items-end">
+                                    <div class="flex items-center space-x-1">
+                                        {% for deliverable in decision.deliverables.all|slice:":3" %}
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium
+                                                         {% if deliverable.status == 'completed' %}bg-green-100 text-green-800
+                                                         {% elif deliverable.status == 'in_progress' %}bg-yellow-100 text-yellow-800
+                                                         {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                                {{ deliverable.get_status_display }}
+                                            </span>
+                                        {% endfor %}
+                                        {% if decision.deliverables.count > 3 %}
+                                            <span class="text-xs text-gray-500">+{{ decision.deliverables.count|add:"-3" }} more</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endif %}
+                            
+                            {% if user.is_admin or user.is_management or decision.created_by == user %}
+                                <div class="flex items-center space-x-2">
+                                    <a href="{% url 'core:decision_edit' decision.pk %}" 
+                                       class="text-indigo-600 hover:text-indigo-900">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </li>
+        {% empty %}
+            <li class="px-4 py-12 text-center">
+                <div class="text-gray-400">
+                    <i class="fas fa-gavel text-4xl mb-4"></i>
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">No decisions found</h3>
+                    <p class="text-gray-500">
+                        {% if request.GET %}
+                            Try adjusting your search criteria.
+                        {% else %}
+                            Start by recording your first decision.
+                        {% endif %}
+                    </p>
+                    {% if user.is_admin or user.is_management %}
+                        <div class="mt-4">
+                            <a href="{% url 'core:decision_create' %}" class="btn-primary">
+                                <i class="fas fa-plus mr-2"></i>Record Decision
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </li>
+        {% endfor %}
+    </ul>
+</div>
+
+<!-- Pagination -->
+{% if is_paginated %}
+    <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 mt-6">
+        <div class="flex-1 flex justify-between sm:hidden">
+            {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}{% if request.GET %}&{{ request.GET.urlencode }}{% endif %}" 
+                   class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                    Previous
+                </a>
+            {% endif %}
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}{% if request.GET %}&{{ request.GET.urlencode }}{% endif %}" 
+                   class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                    Next
+                </a>
+            {% endif %}
+        </div>
+        <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+            <div>
+                <p class="text-sm text-gray-700">
+                    Showing <span class="font-medium">{{ page_obj.start_index }}</span> to <span class="font-medium">{{ page_obj.end_index }}</span> of 
+                    <span class="font-medium">{{ page_obj.paginator.count }}</span> results
+                </p>
+            </div>
+            <div>
+                <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                    {% if page_obj.has_previous %}
+                        <a href="?page={{ page_obj.previous_page_number }}{% if request.GET %}&{{ request.GET.urlencode }}{% endif %}" 
+                           class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                    {% endif %}
+                    
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                            <span class="z-10 bg-indigo-50 border-indigo-500 text-indigo-600 relative inline-flex items-center px-4 py-2 border text-sm font-medium">
+                                {{ num }}
+                            </span>
+                        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                            <a href="?page={{ num }}{% if request.GET %}&{{ request.GET.urlencode }}{% endif %}" 
+                               class="bg-white border-gray-300 text-gray-500 hover:bg-gray-50 relative inline-flex items-center px-4 py-2 border text-sm font-medium">
+                                {{ num }}
+                            </a>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if page_obj.has_next %}
+                        <a href="?page={{ page_obj.next_page_number }}{% if request.GET %}&{{ request.GET.urlencode }}{% endif %}" 
+                           class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    {% endif %}
+                </nav>
+            </div>
+        </div>
+    </div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Decision list functionality can be added here if needed
+</script>
+{% endblock %}

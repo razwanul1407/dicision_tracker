@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+
+{% block sidebar %}
+    <!-- Management User Sidebar -->
+    <a href="{% url 'dashboard:management_dashboard' %}" class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 sidebar-nav">
+        <i class="fas fa-tachometer-alt mr-3"></i>
+        Dashboard
+    </a>
+    
+    <a href="{% url 'core:project_list' %}" class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 sidebar-nav">
+        <i class="fas fa-folder mr-3"></i>
+        My Projects
+    </a>
+    
+    <a href="{% url 'core:project_create' %}" class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 sidebar-nav">
+        <i class="fas fa-plus mr-3"></i>
+        Create Project
+    </a>
+    
+    <a href="{% url 'core:event_list' %}" class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 sidebar-nav">
+        <i class="fas fa-calendar mr-3"></i>
+        Team Events
+    </a>
+    
+    <a href="{% url 'core:event_create' %}" class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 sidebar-nav">
+        <i class="fas fa-calendar-plus mr-3"></i>
+        Schedule Event
+    </a>
+    
+    <a href="{% url 'core:decision_list' %}" class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 sidebar-nav">
+        <i class="fas fa-gavel mr-3"></i>
+        Team Decisions
+    </a>
+    
+    <a href="{% url 'core:deliverable_list' %}" class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 sidebar-nav">
+        <i class="fas fa-tasks mr-3"></i>
+        Team Deliverables
+    </a>
+    
+    <a href="{% url 'dashboard:calendar' %}" class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 sidebar-nav">
+        <i class="fas fa-calendar-alt mr-3"></i>
+        Calendar
+    </a>
+    
+    <a href="{% url 'dashboard:reports' %}" class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 sidebar-nav">
+        <i class="fas fa-chart-line mr-3"></i>
+        Team Reports
+    </a>
+    
+    <div class="px-4 py-2 text-gray-500 text-sm font-medium uppercase tracking-wider">
+        Team Management
+    </div>
+    
+    <a href="{% url 'core:team_overview' %}" class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 sidebar-nav">
+        <i class="fas fa-users mr-3"></i>
+        Team Overview
+    </a>
+    
+    <a href="{% url 'core:workload_distribution' %}" class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 sidebar-nav">
+        <i class="fas fa-balance-scale mr-3"></i>
+        Workload Distribution
+    </a>
+    
+    <a href="{% url 'core:invitation_list' %}" class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 sidebar-nav">
+        <i class="fas fa-paper-plane mr-3"></i>
+        Send Invitations
+    </a>
+    
+    <a href="{% url 'core:manage_user_permissions' %}" class="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 sidebar-nav">
+        <i class="fas fa-user-shield mr-3"></i>
+        User Permissions
+    </a>
+{% endblock %}

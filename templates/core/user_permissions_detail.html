@@ -1,0 +1,215 @@
+{% extends 'management_base.html' %}
+
+{% block title %}{{ target_user.get_full_name|default:target_user.username }} - Permissions{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <!-- Header -->
+    <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center">
+                <div class="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mr-4">
+                    <i class="fas fa-user text-blue-600 text-2xl"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900">
+                        {{ target_user.get_full_name|default:target_user.username }}
+                    </h1>
+                    <p class="text-gray-600">{{ target_user.email }}</p>
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 mt-1">
+                        Project User
+                    </span>
+                </div>
+            </div>
+            <a href="{% url 'core:manage_user_permissions' %}" 
+               class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md text-sm font-medium">
+                <i class="fas fa-arrow-left mr-2"></i>
+                Back to Users
+            </a>
+        </div>
+    </div>
+
+    <!-- Permissions Form -->
+    <div class="bg-white rounded-lg shadow-md">
+        <div class="p-6 border-b border-gray-200">
+            <h2 class="text-lg font-semibold text-gray-900">Module Access Permissions</h2>
+            <p class="text-sm text-gray-600 mt-1">Control which features and modules this user can access</p>
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+            <div class="p-6 space-y-6">
+                <!-- Core Modules -->
+                <div>
+                    <h3 class="text-md font-medium text-gray-900 mb-4 flex items-center">
+                        <i class="fas fa-cubes mr-2 text-blue-600"></i>
+                        Core Modules
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {% for perm in permissions %}
+                            {% if perm.name in 'can_view_projects,can_view_events,can_view_decisions,can_manage_deliverables' %}
+                            <div class="border border-gray-200 rounded-lg p-4">
+                                <label class="flex items-start">
+                                    <input type="checkbox" 
+                                           name="{{ perm.name }}" 
+                                           {% if perm.enabled %}checked{% endif %}
+                                           class="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                                    <div class="ml-3">
+                                        <div class="text-sm font-medium text-gray-900">{{ perm.label }}</div>
+                                        <div class="text-sm text-gray-600">{{ perm.description }}</div>
+                                        <div class="mt-2">
+                                            {% if perm.enabled %}
+                                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                    <i class="fas fa-check mr-1"></i>
+                                                    Enabled
+                                                </span>
+                                            {% else %}
+                                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                                    <i class="fas fa-times mr-1"></i>
+                                                    Disabled
+                                                </span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </label>
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Calendar & Invitations -->
+                <div>
+                    <h3 class="text-md font-medium text-gray-900 mb-4 flex items-center">
+                        <i class="fas fa-calendar-alt mr-2 text-green-600"></i>
+                        Calendar & Events
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {% for perm in permissions %}
+                            {% if perm.name in 'can_view_calendar,can_manage_invitations' %}
+                            <div class="border border-gray-200 rounded-lg p-4">
+                                <label class="flex items-start">
+                                    <input type="checkbox" 
+                                           name="{{ perm.name }}" 
+                                           {% if perm.enabled %}checked{% endif %}
+                                           class="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                                    <div class="ml-3">
+                                        <div class="text-sm font-medium text-gray-900">{{ perm.label }}</div>
+                                        <div class="text-sm text-gray-600">{{ perm.description }}</div>
+                                        <div class="mt-2">
+                                            {% if perm.enabled %}
+                                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                    <i class="fas fa-check mr-1"></i>
+                                                    Enabled
+                                                </span>
+                                            {% else %}
+                                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                                    <i class="fas fa-times mr-1"></i>
+                                                    Disabled
+                                                </span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </label>
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Personal Tools -->
+                <div>
+                    <h3 class="text-md font-medium text-gray-900 mb-4 flex items-center">
+                        <i class="fas fa-tools mr-2 text-purple-600"></i>
+                        Personal Tools
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {% for perm in permissions %}
+                            {% if perm.name in 'can_track_progress,can_use_time_tracker,can_view_reports' %}
+                            <div class="border border-gray-200 rounded-lg p-4">
+                                <label class="flex items-start">
+                                    <input type="checkbox" 
+                                           name="{{ perm.name }}" 
+                                           {% if perm.enabled %}checked{% endif %}
+                                           class="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                                    <div class="ml-3">
+                                        <div class="text-sm font-medium text-gray-900">{{ perm.label }}</div>
+                                        <div class="text-sm text-gray-600">{{ perm.description }}</div>
+                                        <div class="mt-2">
+                                            {% if perm.enabled %}
+                                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                                                    <i class="fas fa-check mr-1"></i>
+                                                    Enabled
+                                                </span>
+                                            {% else %}
+                                                <span class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800">
+                                                    <i class="fas fa-times mr-1"></i>
+                                                    Disabled
+                                                </span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </label>
+                            </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex justify-between items-center">
+                <div class="text-sm text-gray-600">
+                    Changes will take effect immediately after saving
+                </div>
+                <div class="flex space-x-3">
+                    <a href="{% url 'core:manage_user_permissions' %}" 
+                       class="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50">
+                        Cancel
+                    </a>
+                    <button type="submit" 
+                            class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <i class="fas fa-save mr-2"></i>
+                        Save Permissions
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- Recent Activity -->
+    <div class="mt-6 bg-white rounded-lg shadow-md">
+        <div class="p-6 border-b border-gray-200">
+            <h3 class="text-lg font-semibold text-gray-900">Recent Activity</h3>
+            <p class="text-sm text-gray-600 mt-1">Recent changes to this user's permissions</p>
+        </div>
+        <div class="p-6">
+            <div class="text-center text-gray-500">
+                <i class="fas fa-history text-2xl mb-2"></i>
+                <p>No recent permission changes recorded</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add visual feedback when checkboxes are toggled
+    const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+    checkboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            const parentDiv = this.closest('.border');
+            const statusBadge = parentDiv.querySelector('.inline-flex');
+            
+            if (this.checked) {
+                statusBadge.className = 'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800';
+                statusBadge.innerHTML = '<i class="fas fa-check mr-1"></i>Enabled';
+            } else {
+                statusBadge.className = 'inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-800';
+                statusBadge.innerHTML = '<i class="fas fa-times mr-1"></i>Disabled';
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

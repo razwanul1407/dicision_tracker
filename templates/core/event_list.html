@@ -1,0 +1,304 @@
+{% extends "base.html" %}
+
+{% block page_title %}Events{% endblock %}
+
+{% block header_actions %}
+    {% if user.is_admin or user.is_management %}
+        <a href="{% url 'core:event_create' %}" class="btn-primary">
+            <i class="fas fa-plus mr-2"></i>New Event
+        </a>
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<!-- Filter Bar -->
+<div class="bg-white shadow rounded-lg mb-6">
+    <div class="px-6 py-4">
+        <form method="get" class="flex flex-wrap items-center gap-4">
+            <div class="flex-1 min-w-64">
+                <input type="text" name="search" value="{{ request.GET.search }}" 
+                       placeholder="Search events..." 
+                       class="form-input w-full">
+            </div>
+            
+            {% if user.is_admin %}
+                <div class="min-w-48">
+                    <select name="project" class="form-select w-full">
+                        <option value="">All Projects</option>
+                        {% for project in projects %}
+                            <option value="{{ project.pk }}" {% if request.GET.project == project.pk|stringformat:"s" %}selected{% endif %}>
+                                {{ project.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            {% endif %}
+            
+            <div class="min-w-32">
+                <select name="venue" class="form-select w-full">
+                    <option value="">All Venues</option>
+                    <option value="physical" {% if request.GET.venue == "physical" %}selected{% endif %}>Physical</option>
+                    <option value="virtual" {% if request.GET.venue == "virtual" %}selected{% endif %}>Virtual</option>
+                    <option value="hybrid" {% if request.GET.venue == "hybrid" %}selected{% endif %}>Hybrid</option>
+                </select>
+            </div>
+            
+            <button type="submit" class="btn-secondary">
+                <i class="fas fa-search mr-2"></i>Filter
+            </button>
+            
+            {% if request.GET %}
+                <a href="{% url 'core:event_list' %}" class="btn-outline">
+                    <i class="fas fa-times mr-2"></i>Clear
+                </a>
+            {% endif %}
+        </form>
+    </div>
+</div>
+
+<!-- View Toggle -->
+<div class="mb-6">
+    <div class="sm:hidden">
+        <select class="form-select w-full" id="view-select">
+            <option value="list" {% if view_type == 'list' %}selected{% endif %}>List View</option>
+            <option value="calendar" {% if view_type == 'calendar' %}selected{% endif %}>Calendar View</option>
+        </select>
+    </div>
+    <div class="hidden sm:block">
+        <nav class="flex space-x-8">
+            <a href="?{% if request.GET %}{{ request.GET.urlencode }}&{% endif %}view=list" 
+               class="{% if view_type == 'list' %}border-indigo-500 text-indigo-600{% else %}border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300{% endif %} whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm">
+                <i class="fas fa-list mr-2"></i>List View
+            </a>
+            <a href="?{% if request.GET %}{{ request.GET.urlencode }}&{% endif %}view=calendar" 
+               class="{% if view_type == 'calendar' %}border-indigo-500 text-indigo-600{% else %}border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300{% endif %} whitespace-nowrap py-2 px-1 border-b-2 font-medium text-sm">
+                <i class="fas fa-calendar mr-2"></i>Calendar View
+            </a>
+        </nav>
+    </div>
+</div>
+
+{% if view_type == 'calendar' %}
+    <!-- Calendar View -->
+    <div class="bg-white shadow rounded-lg">
+        <div class="p-6">
+            <div id="calendar"></div>
+        </div>
+    </div>
+{% else %}
+    <!-- List View -->
+    <div class="bg-white shadow overflow-hidden sm:rounded-md">
+        <ul class="divide-y divide-gray-200">
+            {% for event in events %}
+                <li>
+                    <div class="px-4 py-4 sm:px-6 hover:bg-gray-50">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center">
+                                <div class="flex-shrink-0">
+                                    {% if event.venue == 'virtual' %}
+                                        <div class="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                            <i class="fas fa-video text-blue-600"></i>
+                                        </div>
+                                    {% elif event.venue == 'hybrid' %}
+                                        <div class="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                                            <i class="fas fa-globe text-purple-600"></i>
+                                        </div>
+                                    {% else %}
+                                        <div class="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                                            <i class="fas fa-map-marker-alt text-green-600"></i>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="ml-4">
+                                    <div class="flex items-center">
+                                        <p class="text-sm font-medium text-indigo-600 truncate">
+                                            <a href="{% url 'core:event_detail' event.pk %}">{{ event.title }}</a>
+                                        </p>
+                                        {% if event.linked_events.exists %}
+                                            <span class="ml-2 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
+                                                <i class="fas fa-link mr-1"></i>Linked
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                    <div class="mt-2 flex items-center text-sm text-gray-500">
+                                        <i class="fas fa-clock mr-1"></i>
+                                        <p>
+                                            {{ event.start_time|date:"M d, Y H:i" }} - {{ event.end_time|date:"H:i" }}
+                                        </p>
+                                        <span class="mx-2">•</span>
+                                        <p>{{ event.venue|title }}</p>
+                                        {% if event.project %}
+                                            <span class="mx-2">•</span>
+                                            <p>{{ event.project.name }}</p>
+                                        {% endif %}
+                                    </div>
+                                    {% if event.description %}
+                                        <p class="mt-2 text-sm text-gray-600">
+                                            {{ event.description|truncatewords:20 }}
+                                        </p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-4">
+                                <div class="flex flex-col items-end">
+                                    <div class="flex items-center text-sm text-gray-500">
+                                        <i class="fas fa-users mr-1"></i>
+                                        <span>{{ event.participants.count }} participant{{ event.participants.count|pluralize }}</span>
+                                    </div>
+                                    {% if event.decisions.exists %}
+                                        <div class="flex items-center text-sm text-gray-500 mt-1">
+                                            <i class="fas fa-gavel mr-1"></i>
+                                            <span>{{ event.decisions.count }} decision{{ event.decisions.count|pluralize }}</span>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                
+                                {% if user.is_admin or user.is_management or event.created_by == user %}
+                                    <div class="flex items-center space-x-2">
+                                        <a href="{% url 'core:event_edit' event.pk %}" 
+                                           class="text-indigo-600 hover:text-indigo-900">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </li>
+            {% empty %}
+                <li class="px-4 py-12 text-center">
+                    <div class="text-gray-400">
+                        <i class="fas fa-calendar-plus text-4xl mb-4"></i>
+                        <h3 class="text-lg font-medium text-gray-900 mb-2">No events found</h3>
+                        <p class="text-gray-500">
+                            {% if request.GET %}
+                                Try adjusting your search criteria.
+                            {% else %}
+                                Get started by creating your first event.
+                            {% endif %}
+                        </p>
+                        {% if user.is_admin or user.is_management %}
+                            <div class="mt-4">
+                                <a href="{% url 'core:event_create' %}" class="btn-primary">
+                                    <i class="fas fa-plus mr-2"></i>Create Event
+                                </a>
+                            </div>
+                        {% endif %}
+                    </div>
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
+    
+    <!-- Pagination -->
+    {% if is_paginated %}
+        <div class="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6 mt-6">
+            <div class="flex-1 flex justify-between sm:hidden">
+                {% if page_obj.has_previous %}
+                    <a href="?page={{ page_obj.previous_page_number }}{% if request.GET %}&{{ request.GET.urlencode }}{% endif %}" 
+                       class="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                        Previous
+                    </a>
+                {% endif %}
+                {% if page_obj.has_next %}
+                    <a href="?page={{ page_obj.next_page_number }}{% if request.GET %}&{{ request.GET.urlencode }}{% endif %}" 
+                       class="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50">
+                        Next
+                    </a>
+                {% endif %}
+            </div>
+            <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                <div>
+                    <p class="text-sm text-gray-700">
+                        Showing <span class="font-medium">{{ page_obj.start_index }}</span> to <span class="font-medium">{{ page_obj.end_index }}</span> of 
+                        <span class="font-medium">{{ page_obj.paginator.count }}</span> results
+                    </p>
+                </div>
+                <div>
+                    <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                        {% if page_obj.has_previous %}
+                            <a href="?page={{ page_obj.previous_page_number }}{% if request.GET %}&{{ request.GET.urlencode }}{% endif %}" 
+                               class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                <i class="fas fa-chevron-left"></i>
+                            </a>
+                        {% endif %}
+                        
+                        {% for num in page_obj.paginator.page_range %}
+                            {% if page_obj.number == num %}
+                                <span class="z-10 bg-indigo-50 border-indigo-500 text-indigo-600 relative inline-flex items-center px-4 py-2 border text-sm font-medium">
+                                    {{ num }}
+                                </span>
+                            {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                                <a href="?page={{ num }}{% if request.GET %}&{{ request.GET.urlencode }}{% endif %}" 
+                                   class="bg-white border-gray-300 text-gray-500 hover:bg-gray-50 relative inline-flex items-center px-4 py-2 border text-sm font-medium">
+                                    {{ num }}
+                                </a>
+                            {% endif %}
+                        {% endfor %}
+                        
+                        {% if page_obj.has_next %}
+                            <a href="?page={{ page_obj.next_page_number }}{% if request.GET %}&{{ request.GET.urlencode }}{% endif %}" 
+                               class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                <i class="fas fa-chevron-right"></i>
+                            </a>
+                        {% endif %}
+                    </nav>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+{% if view_type == 'calendar' %}
+<script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js'></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var calendarEl = document.getElementById('calendar');
+    var calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,timeGridDay'
+        },
+        events: [
+            {% for event in all_events %}
+            {
+                id: '{{ event.pk }}',
+                title: '{{ event.title|escapejs }}',
+                start: '{{ event.start_time|date:"c" }}',
+                end: '{{ event.end_time|date:"c" }}',
+                url: '{% url "core:event_detail" event.pk %}',
+                classNames: ['event-{{ event.venue }}']
+            },
+            {% endfor %}
+        ],
+        eventDidMount: function(info) {
+            // Custom styling based on venue type
+            if (info.event.classNames.includes('event-virtual')) {
+                info.el.style.backgroundColor = '#3B82F6';
+            } else if (info.event.classNames.includes('event-hybrid')) {
+                info.el.style.backgroundColor = '#8B5CF6';
+            } else {
+                info.el.style.backgroundColor = '#10B981';
+            }
+        }
+    });
+    calendar.render();
+});
+</script>
+{% endif %}
+
+<script>
+
+// View selector for mobile
+document.getElementById('view-select')?.addEventListener('change', function() {
+    const url = new URL(window.location);
+    url.searchParams.set('view', this.value);
+    window.location.href = url.toString();
+});
+</script>
+{% endblock %}

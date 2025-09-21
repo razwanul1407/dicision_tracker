@@ -1,0 +1,276 @@
+{% extends "base.html" %}
+
+{% block page_title %}
+    {% if user.is_admin %}
+        All Invitations
+    {% elif user.is_management %}
+        Sent Invitations
+    {% else %}
+        My Invitations
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Page Header -->
+    <div class="bg-white shadow rounded-lg">
+        <div class="px-6 py-4">
+            <div class="flex justify-between items-center">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-900">
+                        {% if user.is_admin %}
+                            All Event Invitations
+                        {% elif user.is_management %}
+                            Invitations I've Sent
+                        {% else %}
+                            My Event Invitations
+                        {% endif %}
+                    </h1>
+                    <p class="text-gray-600 mt-1">
+                        {% if user.is_admin %}
+                            System-wide invitation management
+                        {% elif user.is_management %}
+                            Track invitations you've sent to team members
+                        {% else %}
+                            Manage your event invitations
+                        {% endif %}
+                    </p>
+                </div>
+                <div class="text-sm text-gray-500">
+                    {{ invitations|length }} invitation{{ invitations|length|pluralize }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filter Options -->
+    <div class="bg-white shadow rounded-lg">
+        <div class="px-6 py-4">
+            <div class="flex flex-wrap items-center gap-4">
+                <!-- Status Filter -->
+                <div class="flex items-center space-x-2">
+                    <label class="text-sm font-medium text-gray-700">Status:</label>
+                    <select id="status-filter" class="form-select text-sm" onchange="filterInvitations()">
+                        <option value="all">All Status</option>
+                        <option value="pending">Pending</option>
+                        <option value="accepted">Accepted</option>
+                        <option value="declined">Declined</option>
+                    </select>
+                </div>
+
+                <!-- Sort Options -->
+                <div class="flex items-center space-x-2">
+                    <label class="text-sm font-medium text-gray-700">Sort by:</label>
+                    <select id="sort-option" class="form-select text-sm" onchange="sortInvitations()">
+                        <option value="created_at">Newest First</option>
+                        <option value="event_date">Event Date</option>
+                        <option value="status">Status</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Invitations List -->
+    <div class="bg-white shadow rounded-lg">
+        <div class="px-6 py-4">
+            {% if invitations %}
+                <div id="invitations-container" class="space-y-4">
+                    {% for invitation in invitations %}
+                        <div class="invitation-item border rounded-lg p-4 hover:bg-gray-50 transition-colors duration-200"
+                             data-status="{{ invitation.status }}" 
+                             data-created="{{ invitation.created_at|date:'Y-m-d' }}"
+                             data-event-date="{{ invitation.event.start_time|date:'Y-m-d' }}">
+                            
+                            <div class="flex items-start justify-between">
+                                <!-- Invitation Details -->
+                                <div class="flex-1">
+                                    <!-- Event Title and Project -->
+                                    <div class="flex items-start space-x-3">
+                                        <div class="flex-shrink-0">
+                                            <i class="fas fa-calendar-alt text-blue-600 text-lg mt-1"></i>
+                                        </div>
+                                        <div class="flex-1">
+                                            <h3 class="text-lg font-medium text-gray-900">
+                                                <a href="{% url 'core:event_detail' invitation.event.pk %}" class="hover:text-blue-600">
+                                                    {{ invitation.event.title }}
+                                                </a>
+                                            </h3>
+                                            <div class="flex items-center space-x-4 text-sm text-gray-500 mt-1">
+                                                <span>
+                                                    <i class="fas fa-folder mr-1"></i>
+                                                    {{ invitation.event.project.name }}
+                                                </span>
+                                                <span>
+                                                    <i class="fas fa-clock mr-1"></i>
+                                                    {{ invitation.event.start_time|date:"M d, Y g:i A" }}
+                                                </span>
+                                                {% if invitation.event.venue %}
+                                                    <span>
+                                                        <i class="fas fa-map-marker-alt mr-1"></i>
+                                                        {{ invitation.event.venue }}
+                                                    </span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Invitation Meta -->
+                                    <div class="mt-3 flex items-center space-x-6 text-sm text-gray-600">
+                                        {% if user.is_admin or user.is_management %}
+                                            <span>
+                                                <i class="fas fa-user mr-1"></i>
+                                                Invited: {{ invitation.invitee.get_full_name|default:invitation.invitee.username }}
+                                            </span>
+                                        {% endif %}
+                                        
+                                        {% if user.is_admin %}
+                                            <span>
+                                                <i class="fas fa-user-plus mr-1"></i>
+                                                By: {{ invitation.invited_by.get_full_name|default:invitation.invited_by.username }}
+                                            </span>
+                                        {% endif %}
+                                        
+                                        <span>
+                                            <i class="fas fa-paper-plane mr-1"></i>
+                                            Sent: {{ invitation.created_at|date:"M d, Y" }}
+                                        </span>
+                                    </div>
+
+                                    <!-- Response Message -->
+                                    {% if invitation.message %}
+                                        <div class="mt-3 p-3 bg-gray-50 rounded-md">
+                                            <p class="text-sm text-gray-700">
+                                                <strong>Message:</strong> {{ invitation.message }}
+                                            </p>
+                                        </div>
+                                    {% endif %}
+                                </div>
+
+                                <!-- Status and Actions -->
+                                <div class="flex-shrink-0 flex items-center space-x-3">
+                                    <!-- Status Badge -->
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                                        {% if invitation.status == 'accepted' %}bg-green-100 text-green-800
+                                        {% elif invitation.status == 'declined' %}bg-red-100 text-red-800
+                                        {% elif invitation.status == 'pending' %}bg-yellow-100 text-yellow-800
+                                        {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                        {% if invitation.status == 'accepted' %}
+                                            <i class="fas fa-check mr-1"></i>Accepted
+                                        {% elif invitation.status == 'declined' %}
+                                            <i class="fas fa-times mr-1"></i>Declined
+                                        {% elif invitation.status == 'pending' %}
+                                            <i class="fas fa-clock mr-1"></i>Pending
+                                        {% else %}
+                                            {{ invitation.status|capfirst }}
+                                        {% endif %}
+                                    </span>
+
+                                    <!-- Actions for Pending Invitations -->
+                                    {% if invitation.status == 'pending' and invitation.invitee == user %}
+                                        <div class="flex space-x-2">
+                                            <form method="post" action="{% url 'core:invitation_respond' invitation.pk %}" class="inline">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="response" value="accepted">
+                                                <button type="submit" class="px-3 py-1 bg-green-600 text-white text-xs rounded-md hover:bg-green-700 transition-colors">
+                                                    <i class="fas fa-check mr-1"></i>Accept
+                                                </button>
+                                            </form>
+                                            <form method="post" action="{% url 'core:invitation_respond' invitation.pk %}" class="inline">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="response" value="declined">
+                                                <button type="submit" class="px-3 py-1 bg-red-600 text-white text-xs rounded-md hover:bg-red-700 transition-colors">
+                                                    <i class="fas fa-times mr-1"></i>Decline
+                                                </button>
+                                            </form>
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <!-- Empty State -->
+                <div class="text-center py-12">
+                    <i class="fas fa-envelope-open text-gray-400 text-6xl mb-4"></i>
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">
+                        {% if user.is_admin %}
+                            No invitations in the system
+                        {% elif user.is_management %}
+                            No invitations sent yet
+                        {% else %}
+                            No invitations received
+                        {% endif %}
+                    </h3>
+                    <p class="text-gray-500">
+                        {% if user.is_admin %}
+                            Invitations will appear here when users send them.
+                        {% elif user.is_management %}
+                            When you invite people to events, they'll appear here.
+                        {% else %}
+                            You'll see event invitations here when you receive them.
+                        {% endif %}
+                    </p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function filterInvitations() {
+    const statusFilter = document.getElementById('status-filter').value;
+    const invitations = document.querySelectorAll('.invitation-item');
+    
+    invitations.forEach(invitation => {
+        const status = invitation.dataset.status;
+        if (statusFilter === 'all' || status === statusFilter) {
+            invitation.style.display = 'block';
+        } else {
+            invitation.style.display = 'none';
+        }
+    });
+}
+
+function sortInvitations() {
+    const sortOption = document.getElementById('sort-option').value;
+    const container = document.getElementById('invitations-container');
+    const invitations = Array.from(container.children);
+    
+    invitations.sort((a, b) => {
+        let aValue, bValue;
+        
+        switch (sortOption) {
+            case 'created_at':
+                aValue = new Date(a.dataset.created);
+                bValue = new Date(b.dataset.created);
+                return bValue - aValue; // Newest first
+            case 'event_date':
+                aValue = new Date(a.dataset.eventDate);
+                bValue = new Date(b.dataset.eventDate);
+                return aValue - bValue; // Earliest first
+            case 'status':
+                aValue = a.dataset.status;
+                bValue = b.dataset.status;
+                // Order: pending, accepted, declined
+                const statusOrder = { 'pending': 0, 'accepted': 1, 'declined': 2 };
+                return (statusOrder[aValue] || 3) - (statusOrder[bValue] || 3);
+            default:
+                return 0;
+        }
+    });
+    
+    // Clear container and re-append sorted items
+    container.innerHTML = '';
+    invitations.forEach(invitation => container.appendChild(invitation));
+}
+
+// Initialize filters
+document.addEventListener('DOMContentLoaded', function() {
+    filterInvitations();
+});
+</script>
+{% endblock %}

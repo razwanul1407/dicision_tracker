@@ -1,0 +1,332 @@
+{% extends "base.html" %}
+
+{% load static %}
+
+{% block title %}Calendar - Event Decision Tracker{% endblock %}
+
+{% block page_title %}Calendar{% endblock %}
+
+{% block header_actions %}
+    {% if user.is_admin or user.is_management %}
+        <a href="{% url 'core:event_create' %}" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium">
+            <i class="fas fa-plus mr-2"></i>New Event
+        </a>
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <!-- Calendar Controls -->
+    <div class="bg-white rounded-lg shadow-md p-4 mb-6">
+        <div class="flex flex-wrap items-center justify-between gap-4">
+            <!-- View Controls -->
+            <div class="flex items-center space-x-4">
+                <div class="flex items-center space-x-2">
+                    <label class="text-sm font-medium text-gray-700">View:</label>
+                    <select id="calendar-view" class="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="dayGridMonth">Month</option>
+                        <option value="timeGridWeek">Week</option>
+                        <option value="timeGridDay">Day</option>
+                        <option value="listWeek">List</option>
+                    </select>
+                </div>
+                
+                <!-- Filter Controls -->
+                <div class="flex items-center space-x-2">
+                    <label class="text-sm font-medium text-gray-700">Filter:</label>
+                    <select id="project-filter" class="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="all">All Projects</option>
+                        <!-- Projects will be populated via JavaScript -->
+                    </select>
+                </div>
+            </div>
+            
+            <!-- Calendar Navigation -->
+            <div class="flex items-center space-x-2">
+                <button id="calendar-prev" class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded-md text-sm font-medium">
+                    <i class="fas fa-chevron-left"></i>
+                </button>
+                <button id="calendar-today" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded-md text-sm font-medium">
+                    Today
+                </button>
+                <button id="calendar-next" class="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded-md text-sm font-medium">
+                    <i class="fas fa-chevron-right"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Calendar Container -->
+    <div class="bg-white rounded-lg shadow-md">
+        <div id="calendar" class="p-6"></div>
+    </div>
+
+    <!-- Legend -->
+    <div class="bg-white rounded-lg shadow-md p-4 mt-6">
+        <h3 class="text-lg font-semibold text-gray-900 mb-4">Legend</h3>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="flex items-center">
+                <div class="w-4 h-4 bg-blue-500 rounded mr-2"></div>
+                <span class="text-sm text-gray-700">My Events</span>
+            </div>
+            <div class="flex items-center">
+                <div class="w-4 h-4 bg-green-500 rounded mr-2"></div>
+                <span class="text-sm text-gray-700">Participating</span>
+            </div>
+            <div class="flex items-center">
+                <div class="w-4 h-4 bg-yellow-500 rounded mr-2"></div>
+                <span class="text-sm text-gray-700">Invited</span>
+            </div>
+            <div class="flex items-center">
+                <div class="w-4 h-4 bg-red-500 rounded mr-2"></div>
+                <span class="text-sm text-gray-700">Conflicts</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex items-center">
+                <div class="p-2 bg-blue-100 rounded-lg">
+                    <i class="fas fa-calendar text-blue-600 text-xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">This Month</p>
+                    <p class="text-2xl font-bold text-gray-900" id="monthly-events">-</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex items-center">
+                <div class="p-2 bg-green-100 rounded-lg">
+                    <i class="fas fa-clock text-green-600 text-xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">Upcoming</p>
+                    <p class="text-2xl font-bold text-gray-900" id="upcoming-events">-</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <div class="flex items-center">
+                <div class="p-2 bg-yellow-100 rounded-lg">
+                    <i class="fas fa-exclamation-triangle text-yellow-600 text-xl"></i>
+                </div>
+                <div class="ml-4">
+                    <p class="text-sm font-medium text-gray-600">Conflicts</p>
+                    <p class="text-2xl font-bold text-gray-900" id="conflict-count">-</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Event Detail Modal -->
+<div id="event-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+    <div class="relative top-20 mx-auto p-5 border w-11/12 md:w-1/2 shadow-lg rounded-md bg-white">
+        <div class="mt-3">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold text-gray-900" id="modal-title">Event Details</h3>
+                <button id="close-modal" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div id="modal-content" class="text-sm text-gray-700">
+                <!-- Event details will be populated here -->
+            </div>
+            <div class="flex justify-end mt-6 space-x-3">
+                <button id="modal-close" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md text-sm font-medium">
+                    Close
+                </button>
+                <a id="modal-view-details" href="#" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium">
+                    View Details
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const calendarEl = document.getElementById('calendar');
+    let calendar;
+    let allEvents = [];
+    
+    // Initialize FullCalendar
+    calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        headerToolbar: false, // We're using custom controls
+        height: 'auto',
+        events: function(fetchInfo, successCallback, failureCallback) {
+            // Fetch events from API
+            fetch('/dashboard/api/calendar-events/')
+                .then(response => response.json())
+                .then(data => {
+                    allEvents = data;
+                    filterAndDisplayEvents();
+                    updateStats();
+                })
+                .catch(error => {
+                    console.error('Error fetching events:', error);
+                    // Fallback to empty array if API fails
+                    successCallback([]);
+                });
+                
+            function filterAndDisplayEvents() {
+                const projectFilter = document.getElementById('project-filter').value;
+                let filteredEvents = allEvents;
+                
+                if (projectFilter !== 'all') {
+                    filteredEvents = allEvents.filter(event => event.project_id == projectFilter);
+                }
+                
+                successCallback(filteredEvents);
+            }
+        },
+        eventClick: function(info) {
+            showEventModal(info.event);
+        },
+        eventDisplay: 'block',
+        dayMaxEvents: 3,
+        moreLinkClick: 'popover',
+        eventColor: '#3B82F6', // Default blue color
+        eventDidMount: function(info) {
+            // Customize event appearance based on user relationship
+            const event = info.event;
+            const extendedProps = event.extendedProps;
+            
+            if (extendedProps.isOrganizer) {
+                info.el.style.backgroundColor = '#3B82F6'; // Blue for organized events
+            } else if (extendedProps.isParticipant) {
+                info.el.style.backgroundColor = '#10B981'; // Green for participating
+            } else if (extendedProps.isInvited) {
+                info.el.style.backgroundColor = '#F59E0B'; // Yellow for invited
+            }
+            
+            if (extendedProps.hasConflict) {
+                info.el.style.borderLeft = '4px solid #EF4444'; // Red border for conflicts
+            }
+        }
+    });
+    
+    calendar.render();
+    
+    // Custom navigation controls
+    document.getElementById('calendar-prev').addEventListener('click', function() {
+        calendar.prev();
+    });
+    
+    document.getElementById('calendar-next').addEventListener('click', function() {
+        calendar.next();
+    });
+    
+    document.getElementById('calendar-today').addEventListener('click', function() {
+        calendar.today();
+    });
+    
+    // View change control
+    document.getElementById('calendar-view').addEventListener('change', function() {
+        calendar.changeView(this.value);
+    });
+    
+    // Project filter control
+    document.getElementById('project-filter').addEventListener('change', function() {
+        calendar.refetchEvents();
+    });
+    
+    // Load projects for filter
+    fetch('/dashboard/api/user-projects/')
+        .then(response => response.json())
+        .then(projects => {
+            const select = document.getElementById('project-filter');
+            projects.forEach(project => {
+                const option = document.createElement('option');
+                option.value = project.id;
+                option.textContent = project.name;
+                select.appendChild(option);
+            });
+        })
+        .catch(error => console.error('Error loading projects:', error));
+    
+    // Modal functionality
+    function showEventModal(event) {
+        const modal = document.getElementById('event-modal');
+        const title = document.getElementById('modal-title');
+        const content = document.getElementById('modal-content');
+        const viewDetails = document.getElementById('modal-view-details');
+        
+        title.textContent = event.title;
+        
+        const startTime = event.start.toLocaleString();
+        const endTime = event.end ? event.end.toLocaleString() : 'No end time';
+        
+        content.innerHTML = `
+            <div class="space-y-3">
+                <div>
+                    <strong>Start:</strong> ${startTime}
+                </div>
+                <div>
+                    <strong>End:</strong> ${endTime}
+                </div>
+                <div>
+                    <strong>Project:</strong> ${event.extendedProps.project_name || 'No project'}
+                </div>
+                <div>
+                    <strong>Organizer:</strong> ${event.extendedProps.organizer_name || 'Unknown'}
+                </div>
+                ${event.extendedProps.description ? `
+                <div>
+                    <strong>Description:</strong> ${event.extendedProps.description}
+                </div>
+                ` : ''}
+            </div>
+        `;
+        
+        viewDetails.href = `/core/events/${event.extendedProps.id}/`;
+        modal.classList.remove('hidden');
+    }
+    
+    // Close modal
+    document.getElementById('close-modal').addEventListener('click', function() {
+        document.getElementById('event-modal').classList.add('hidden');
+    });
+    
+    document.getElementById('modal-close').addEventListener('click', function() {
+        document.getElementById('event-modal').classList.add('hidden');
+    });
+    
+    // Close modal when clicking outside
+    document.getElementById('event-modal').addEventListener('click', function(e) {
+        if (e.target === this) {
+            this.classList.add('hidden');
+        }
+    });
+    
+    // Update statistics
+    function updateStats() {
+        const now = new Date();
+        const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+        const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+        
+        const monthlyEvents = allEvents.filter(event => {
+            const eventDate = new Date(event.start);
+            return eventDate >= startOfMonth && eventDate <= endOfMonth;
+        }).length;
+        
+        const upcomingEvents = allEvents.filter(event => {
+            const eventDate = new Date(event.start);
+            return eventDate >= now;
+        }).length;
+        
+        const conflictEvents = allEvents.filter(event => event.hasConflict).length;
+        
+        document.getElementById('monthly-events').textContent = monthlyEvents;
+        document.getElementById('upcoming-events').textContent = upcomingEvents;
+        document.getElementById('conflict-count').textContent = conflictEvents;
+    }
+});
+</script>
+{% endblock %}
