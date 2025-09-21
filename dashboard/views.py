@@ -323,14 +323,17 @@ def calendar_events_api(request):
             'start': event.start_time.isoformat(),
             'end': event.end_time.isoformat() if event.end_time else None,
             'color': color,
-            'description': event.description,
-            'project_id': event.project.id if event.project else None,
-            'project_name': event.project.name if event.project else None,
-            'organizer_name': event.organizer.get_full_name() if event.organizer else None,
-            'isOrganizer': is_organizer,
-            'isParticipant': is_participant,
-            'isInvited': is_invited,
-            'hasConflict': has_conflict,
+            'extendedProps': {
+                'id': event.id,  # Add ID to extendedProps for JavaScript access
+                'description': event.description,
+                'project_id': event.project.id if event.project else None,
+                'project_name': event.project.name if event.project else None,
+                'organizer_name': event.organizer.get_full_name() if event.organizer else None,
+                'isOrganizer': is_organizer,
+                'isParticipant': is_participant,
+                'isInvited': is_invited,
+                'hasConflict': has_conflict,
+            }
         })
     
     return JsonResponse(calendar_events, safe=False)

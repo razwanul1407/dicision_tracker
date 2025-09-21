@@ -285,7 +285,9 @@ document.addEventListener('DOMContentLoaded', function() {
             </div>
         `;
         
-        viewDetails.href = `/core/events/${event.extendedProps.id}/`;
+        // Use extendedProps.id if available, otherwise fall back to event.id
+        const eventId = event.extendedProps.id || event.id;
+        viewDetails.href = `/core/events/${eventId}/`;
         modal.classList.remove('hidden');
     }
     
